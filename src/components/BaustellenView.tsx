@@ -864,60 +864,67 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
 
       {/* Modal: Add Area / Pool / House */}
       {showAddAreaModal && activeBaustelle && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-slate-900">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto safe-top-header safe-bottom-nav">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 text-slate-900 max-h-[calc(100dvh-2.5rem)] sm:max-h-[90vh] flex flex-col my-auto overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white sticky top-0 z-20">
               <h3 className="text-base font-bold text-slate-900 flex items-center space-x-2">
                 <Waves className="w-5 h-5 text-sky-600" />
                 <span>{t.addArea}</span>
               </h3>
-              <button onClick={() => setShowAddAreaModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button 
+                type="button"
+                onClick={() => setShowAddAreaModal(false)} 
+                className="p-2 -mr-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+                aria-label="Schließen"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateArea} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">{t.areaName} *</label>
-                <input
-                  type="text"
-                  required
-                  value={newAreaName}
-                  onChange={e => setNewAreaName(e.target.value)}
-                  placeholder="z. B. Schwimmerbecken 50m, Whirlpool, Technikhaus"
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
-                />
+            <form onSubmit={handleCreateArea} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs overscroll-contain flex flex-col justify-between">
+              <div className="space-y-4">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">{t.areaName} *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newAreaName}
+                    onChange={e => setNewAreaName(e.target.value)}
+                    placeholder="z. B. Schwimmerbecken 50m, Whirlpool, Technikhaus"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">{t.areaType}</label>
+                  <select
+                    value={newAreaType}
+                    onChange={e => setNewAreaType(e.target.value as AreaType)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                  >
+                    <option value="schwimmerbecken">🏊 {t.typeSchwimmer}</option>
+                    <option value="nichtschwimmerbecken">🏊‍♂️ {t.typeNichtschwimmer}</option>
+                    <option value="planschbecken">👶 {t.typePlansch}</option>
+                    <option value="haus">🏠 {t.typeHaus}</option>
+                    <option value="technikraum">⚙️ {t.typeTechnik}</option>
+                    <option value="aussenbereich">🌳 {t.typeAussen}</option>
+                    <option value="custom">➕ {t.typeCustom}</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Beschreibung / Maße (optional)</label>
+                  <input
+                    type="text"
+                    value={newAreaDesc}
+                    onChange={e => setNewAreaDesc(e.target.value)}
+                    placeholder="z. B. 25x12m, Wassertiefe 1.80m"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">{t.areaType}</label>
-                <select
-                  value={newAreaType}
-                  onChange={e => setNewAreaType(e.target.value as AreaType)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
-                >
-                  <option value="schwimmerbecken">🏊 {t.typeSchwimmer}</option>
-                  <option value="nichtschwimmerbecken">🏊‍♂️ {t.typeNichtschwimmer}</option>
-                  <option value="planschbecken">👶 {t.typePlansch}</option>
-                  <option value="haus">🏠 {t.typeHaus}</option>
-                  <option value="technikraum">⚙️ {t.typeTechnik}</option>
-                  <option value="aussenbereich">🌳 {t.typeAussen}</option>
-                  <option value="custom">➕ {t.typeCustom}</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Beschreibung / Maße (optional)</label>
-                <input
-                  type="text"
-                  value={newAreaDesc}
-                  onChange={e => setNewAreaDesc(e.target.value)}
-                  placeholder="z. B. 25x12m, Wassertiefe 1.80m"
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="pt-3 flex items-center justify-end space-x-2">
+              <div className="pt-4 mt-2 border-t border-slate-100 flex items-center justify-end space-x-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowAddAreaModal(false)}
@@ -927,7 +934,7 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-colors"
+                  className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-colors shadow-sm"
                 >
                   Bereich anlegen
                 </button>
@@ -939,9 +946,10 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
 
       {/* Modal: Add Material to Pool with A-Z Catalog Autocomplete */}
       {showAddMaterialModal && activeBaustelle && currentArea && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 text-slate-900">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto safe-top-header safe-bottom-nav">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 text-slate-900 max-h-[calc(100dvh-2.5rem)] sm:max-h-[90vh] flex flex-col my-auto overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header - Fixed Top */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white sticky top-0 z-20">
               <div>
                 <h3 className="text-base font-bold text-slate-900 flex items-center space-x-2">
                   <Package className="w-5 h-5 text-sky-600" />
@@ -951,12 +959,18 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
                   {currentArea.name} ({activeBaustelle.name})
                 </p>
               </div>
-              <button onClick={() => setShowAddMaterialModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button 
+                type="button"
+                onClick={() => setShowAddMaterialModal(false)} 
+                className="p-2 -mr-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                aria-label="Schließen"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleAddMaterial} className="space-y-4 text-xs">
+            {/* Modal Form Body - Scrollable */}
+            <form onSubmit={handleAddMaterial} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs overscroll-contain">
               {/* Quick Pick from A-Z Catalog */}
               <div className="bg-sky-50/70 p-3.5 rounded-2xl border border-sky-100 space-y-2.5">
                 <div className="flex items-center justify-between">
@@ -1143,7 +1157,8 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
                 />
               </div>
 
-              <div className="pt-3 flex items-center justify-end space-x-2">
+              {/* Sticky Footer */}
+              <div className="pt-3.5 border-t border-slate-100 flex items-center justify-end space-x-2 shrink-0 bg-white sticky bottom-0 z-10">
                 <button
                   type="button"
                   onClick={() => setShowAddMaterialModal(false)}
@@ -1153,7 +1168,7 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-colors"
+                  className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-colors shadow-sm"
                 >
                   Material erfassen
                 </button>
@@ -1165,10 +1180,10 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
 
       {/* Modal: Edit Baustelle */}
       {showEditBaustelleModal && activeBaustelle && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 text-slate-900 max-h-[92vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto safe-top-header safe-bottom-nav">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-xl w-full shadow-2xl border border-slate-100 text-slate-900 max-h-[calc(100dvh-2.5rem)] sm:max-h-[90vh] flex flex-col my-auto overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             {/* Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-slate-100 flex-shrink-0">
+            <div className="p-4 sm:p-6 border-b border-slate-100 flex items-start justify-between shrink-0 bg-white sticky top-0 z-20">
               <div>
                 <div className="inline-flex items-center space-x-1.5 text-xs font-bold text-sky-600 uppercase tracking-wider mb-1">
                   <Building2 className="w-4 h-4" />
@@ -1182,14 +1197,15 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowEditBaustelleModal(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition-colors"
+                className="p-2 -mr-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+                aria-label="Schließen"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Form Body */}
-            <form onSubmit={handleSaveEditBaustelle} className="flex-1 overflow-y-auto space-y-4 py-4 pr-1 text-xs">
+            <form onSubmit={handleSaveEditBaustelle} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs overscroll-contain">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Baustellen-Name *</label>
@@ -1284,7 +1300,7 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
               </div>
 
               {/* Bottom Actions */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-3">
+              <div className="pt-3.5 border-t border-slate-100 flex items-center justify-end space-x-3 shrink-0 bg-white sticky bottom-0 z-10">
                 <button
                   type="button"
                   onClick={() => setShowEditBaustelleModal(false)}
@@ -1307,8 +1323,8 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
 
       {/* Modal: Delete Baustelle Confirmation */}
       {showDeleteBaustelleModal && activeBaustelle && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-slate-900">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto safe-top-header safe-bottom-nav">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-slate-900 my-auto">
             <div className="flex items-center space-x-3 text-red-600 mb-4">
               <div className="p-3 bg-red-100 rounded-full">
                 <AlertTriangle className="w-6 h-6" />
@@ -1354,8 +1370,8 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
 
       {/* Modal: Delete Area Confirmation */}
       {areaToDelete && activeBaustelle && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-slate-900">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto safe-top-header safe-bottom-nav">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-slate-900 my-auto">
             <div className="flex items-center space-x-3 text-red-600 mb-4">
               <div className="p-3 bg-red-100 rounded-full">
                 <AlertTriangle className="w-6 h-6" />
@@ -1398,8 +1414,8 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
 
       {/* Modal: Delete Material Confirmation */}
       {materialToDelete && activeBaustelle && currentArea && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-slate-900">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto safe-top-header safe-bottom-nav">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-slate-900 my-auto">
             <div className="flex items-center space-x-3 text-red-600 mb-4">
               <div className="p-3 bg-red-100 rounded-full">
                 <AlertTriangle className="w-6 h-6" />

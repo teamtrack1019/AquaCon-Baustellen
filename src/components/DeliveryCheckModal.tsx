@@ -85,10 +85,10 @@ export const DeliveryCheckModal: React.FC<DeliveryCheckModalProps> = ({ order, o
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 text-slate-900 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto safe-top-header safe-bottom-nav">
+      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-3xl w-full shadow-2xl border border-slate-100 text-slate-900 max-h-[calc(100dvh-2.5rem)] sm:max-h-[90vh] flex flex-col my-auto overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="flex items-start justify-between pb-4 border-b border-slate-100 flex-shrink-0">
+        <div className="p-4 sm:p-6 border-b border-slate-100 flex items-start justify-between shrink-0 bg-white sticky top-0 z-20">
           <div>
             <div className="inline-flex items-center space-x-1.5 text-xs font-bold text-sky-600 uppercase tracking-wider mb-1">
               <Truck className="w-4 h-4" />
@@ -106,14 +106,15 @@ export const DeliveryCheckModal: React.FC<DeliveryCheckModalProps> = ({ order, o
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition-colors"
+            className="p-2 -mr-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+            aria-label="Schließen"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Info Banner */}
-        <div className="my-4 p-3.5 bg-sky-50 border border-sky-200/80 rounded-2xl text-xs text-sky-900 flex-shrink-0">
+        <div className="mx-4 sm:mx-6 my-3 p-3 sm:p-3.5 bg-sky-50 border border-sky-200/80 rounded-2xl text-xs text-sky-900 shrink-0">
           <div className="font-bold flex items-center space-x-1.5 mb-1">
             <PackageCheck className="w-4 h-4 text-sky-600" />
             <span>Lieferschein-Abgleich:</span>
@@ -124,7 +125,7 @@ export const DeliveryCheckModal: React.FC<DeliveryCheckModalProps> = ({ order, o
         </div>
 
         {/* Items Table / Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto space-y-4 pr-1">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 sm:px-6 pb-4 space-y-4 overscroll-contain flex flex-col justify-between">
           <div className="space-y-3">
             {order.items.map(item => {
               const deliveryState = itemDeliveries[item.id] || { deliveredQty: 0, isFlaggedMissing: false, flagNote: '' };
@@ -213,20 +214,20 @@ export const DeliveryCheckModal: React.FC<DeliveryCheckModalProps> = ({ order, o
           </div>
 
           {/* Bottom Actions */}
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3 flex-shrink-0">
+          <div className="pt-3.5 border-t border-slate-100 flex items-center justify-end space-x-3 shrink-0 bg-white sticky bottom-0 z-10">
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors"
+              className="px-4 sm:px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors"
             >
               {t.cancel}
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-emerald-600/25 transition-all flex items-center space-x-2"
+              className="px-4 sm:px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-emerald-600/25 transition-all flex items-center space-x-2"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>Wareneingang buchen & Bestand aktualisieren</span>
+              <span>Wareneingang buchen</span>
             </button>
           </div>
         </form>

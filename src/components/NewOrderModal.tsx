@@ -232,10 +232,10 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 text-slate-900 max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto safe-top-header safe-bottom-nav">
+      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-3xl w-full shadow-2xl border border-slate-100 text-slate-900 max-h-[calc(100dvh-2.5rem)] sm:max-h-[90vh] flex flex-col my-auto overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="flex items-start justify-between pb-4 border-b border-slate-100 flex-shrink-0">
+        <div className="p-4 sm:p-6 border-b border-slate-100 flex items-start justify-between shrink-0 bg-white sticky top-0 z-20">
           <div>
             <div className="inline-flex items-center space-x-1.5 text-xs font-bold text-sky-600 uppercase tracking-wider mb-1">
               <ShoppingBag className="w-4 h-4" />
@@ -246,13 +246,18 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
             </h2>
           </div>
 
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 rounded-lg">
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="p-2 -mr-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+            aria-label="Schließen"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <div className="flex-1 overflow-y-auto space-y-4 py-4 pr-1 text-xs">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs overscroll-contain">
           {/* Baustelle & Becken Selection */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
             <div>
@@ -561,7 +566,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
         </div>
 
         {/* Bottom Actions */}
-        <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 flex-shrink-0">
+        <div className="pt-3.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 shrink-0 bg-white sticky bottom-0 z-10">
           <button
             type="button"
             onClick={onClose}
@@ -575,14 +580,14 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
               type="button"
               disabled={items.length === 0}
               onClick={e => handleSubmit(e, true)}
-              className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white font-bold rounded-xl text-xs transition-colors flex items-center space-x-1.5"
+              className="px-3 sm:px-4 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white font-bold rounded-xl text-xs transition-colors flex items-center space-x-1.5"
             >
               <Download className="w-4 h-4 text-sky-400" />
-              <span>Speichern & PDF herunterladen</span>
+              <span>PDF</span>
             </button>
 
             <button
-              type="button"
+              type="submit"
               disabled={items.length === 0}
               onClick={e => handleSubmit(e, false)}
               className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white font-bold rounded-xl text-xs shadow-lg shadow-sky-600/25 transition-all"
