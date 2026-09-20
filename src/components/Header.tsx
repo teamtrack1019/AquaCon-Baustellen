@@ -21,9 +21,12 @@ import {
   Copy,
   Check,
   Ruler,
-  Users
+  Users,
+  KeyRound,
+  Lock
 } from 'lucide-react';
 import { ManageWorkersModal } from './ManageWorkersModal';
+import { AdminPinModal } from './AdminPinModal';
 import { Logo } from './Logo';
 
 interface HeaderProps {
@@ -59,6 +62,8 @@ export const Header: React.FC<HeaderProps> = ({
   const [showBackupModal, setShowBackupModal] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
   const [showWorkersModal, setShowWorkersModal] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinModalMode, setPinModalMode] = useState<'unlock' | 'change'>('unlock');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [importText, setImportText] = useState('');
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -201,15 +206,27 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="hidden md:inline">Mitarbeiter</span>
               </button>
               <button
-                onClick={() => setRole('admin')}
+                onClick={() => {
+                  if (role === 'admin') {
+                    setPinModalMode('change');
+                    setShowPinModal(true);
+                  } else {
+                    setPinModalMode('unlock');
+                    setShowPinModal(true);
+                  }
+                }}
                 className={`flex items-center space-x-1 px-2 py-1 rounded-lg text-xs font-medium transition-all ${
                   role === 'admin'
                     ? 'bg-sky-500 text-white font-bold shadow'
                     : 'text-slate-400 hover:text-white'
                 }`}
-                title="Admin Modus"
+                title={role === 'admin' ? 'Admin aktiv (Klicken für PIN-Änderung)' : 'Admin Modus (PIN erforderlich)'}
               >
-                <ShieldCheck className="w-3.5 h-3.5" />
+                {role === 'admin' ? (
+                  <ShieldCheck className="w-3.5 h-3.5 text-white" />
+                ) : (
+                  <Lock className="w-3.5 h-3.5 text-slate-400" />
+                )}
                 <span className="hidden md:inline">Admin</span>
               </button>
             </div>
@@ -254,6 +271,17 @@ export const Header: React.FC<HeaderProps> = ({
                   className="text-sky-400 hover:text-sky-300 underline font-semibold ml-1 cursor-pointer"
                 >
                   (Mitarbeiter verwalten)
+                </button>
+                <button
+                  onClick={() => {
+                    setPinModalMode('change');
+                    setShowPinModal(true);
+                  }}
+                  className="text-amber-400 hover:text-amber-300 underline font-semibold ml-2 cursor-pointer flex items-center gap-1"
+                  title="Admin-PIN ändern"
+                >
+                  <KeyRound className="w-3 h-3" />
+                  <span>PIN ändern</span>
                 </button>
               </>
             )}
@@ -536,6 +564,13 @@ export const Header: React.FC<HeaderProps> = ({
       {showWorkersModal && (
         <ManageWorkersModal onClose={() => setShowWorkersModal(false)} />
       )}
+
+      {/* Modal: Admin PIN Authentication & Change */}
+      <AdminPinModal
+        isOpen={showPinModal}
+        onClose={() => setShowPinModal(false)}
+        initialMode={pinModalMode}
+      />
     </header>
   );
 };

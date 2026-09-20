@@ -94,6 +94,11 @@ interface AppContextType {
   allShortages: MaterialShortageItem[];
   flaggedBackorders: { order: Order; item: OrderItem }[];
   
+  // Admin Security / PIN
+  adminPin: string;
+  updateAdminPin: (newPin: string) => void;
+  verifyAdminPin: (inputPin: string) => boolean;
+
   // Reset / Export / Import
   resetToSampleData: () => void;
   exportDataJSON: () => string;
@@ -107,6 +112,7 @@ const STORAGE_KEYS = {
   LANG: 'aquacon_lang_v1',
   WORKERS: 'aquacon_workers_v1',
   ACTIVE_WORKER_ID: 'aquacon_active_worker_id_v1',
+  ADMIN_PIN: 'aquacon_admin_pin_v1',
   BAUSTELLEN: 'aquacon_baustellen_v5',
   CATALOG: 'aquacon_catalog_v9',
   ORDERS: 'aquacon_orders_v8',
@@ -243,6 +249,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const activeWorker = useMemo(() => {
     return workers.find(w => w.id === activeWorkerId) || workers[0];
   }, [workers, activeWorkerId]);
+
+  const [adminPin, setAdminPinState] = useState<string>(() => {
+    return localStorage.getItem(STORAGE_KEYS.ADMIN_PIN) || '0000';
+  });
+
+  const updateAdminPin = (newPin: string) => {
+    const trimmed = newPin.trim();
+    if (!trimmed) return;
+    setAdminPinState(trimmed);
+    localStorage.setItem(STORAGE_KEYS.ADMIN_PIN, trimmed);
+  };
+
+  const verifyAdminPin = (inputPin: string): boolean => {
+    return inputPin.trim() === adminPin;
+  };
 
   const [baustellen, setBaustellen] = useState<Baustelle[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.BAUSTELLEN) || localStorage.getItem('aquacon_baustellen_v2') || localStorage.getItem('aquacon_baustellen_v1');
@@ -1120,6 +1141,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteAufmassSheet,
         allShortages,
         flaggedBackorders,
+        adminPin,
+        updateAdminPin,
+        verifyAdminPin,
         resetToSampleData,
         exportDataJSON,
         importDataJSON
