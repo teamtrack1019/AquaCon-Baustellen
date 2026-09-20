@@ -93,6 +93,8 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'catalog', label: t.navCatalog, icon: BookOpen }
   ];
 
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
   const handleExport = () => {
     const json = exportDataJSON();
     const blob = new Blob([json], { type: 'application/json' });
@@ -117,6 +119,31 @@ export const Header: React.FC<HeaderProps> = ({
     } else {
       setImportStatus('error');
     }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (content) {
+        setImportText(content);
+        const ok = importDataJSON(content);
+        if (ok) {
+          setImportStatus('success');
+          setTimeout(() => {
+            setShowBackupModal(false);
+            setImportStatus('idle');
+            setImportText('');
+          }, 1200);
+        } else {
+          setImportStatus('error');
+        }
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   return (
@@ -519,32 +546,67 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
 
               {/* Import Section */}
-              <div className="p-4 bg-slate-800/80 rounded-xl border border-slate-700 space-y-2">
+              <div className="p-4 bg-slate-800/80 rounded-xl border border-slate-700 space-y-3">
                 <div className="font-semibold text-white flex items-center space-x-2">
-                  <Upload className="w-4 h-4 text-sky-400" />
+                  <Upload className="w-4 h-4 text-emerald-400" />
                   <span>Sicherung wiederherstellen</span>
                 </div>
-                <textarea
-                  value={importText}
-                  onChange={e => setImportText(e.target.value)}
-                  placeholder="JSON-Code hier einfügen..."
-                  rows={3}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 font-mono focus:border-sky-500 focus:outline-none"
+
+                {/* Hidden File Input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json,application/json"
+                  onChange={handleFileUpload}
+                  className="hidden"
                 />
+
+                {/* Primary Option: Choose JSON File from Phone / PC */}
                 <button
-                  onClick={handleImport}
-                  disabled={!importText.trim()}
-                  className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold rounded-lg text-xs transition-colors flex items-center justify-center space-x-1.5"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center space-x-2 active:scale-98 cursor-pointer"
                 >
                   <Upload className="w-4 h-4" />
-                  <span>Daten importieren</span>
+                  <span>📁 JSON-Datei auswählen & wiederherstellen</span>
                 </button>
+
                 {importStatus === 'success' && (
-                  <p className="text-xs text-emerald-400 font-medium">✓ Erfolgreich importiert!</p>
+                  <div className="p-2.5 bg-emerald-500/20 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs font-semibold flex items-center justify-center space-x-1.5">
+                    <span>✓ Sicherung erfolgreich wiederhergestellt!</span>
+                  </div>
                 )}
+
                 {importStatus === 'error' && (
-                  <p className="text-xs text-rose-400 font-medium">✗ Ungültiges JSON-Format!</p>
+                  <div className="p-2.5 bg-rose-500/20 border border-rose-500/40 rounded-xl text-rose-300 text-xs font-semibold flex items-center justify-center space-x-1.5">
+                    <span>✗ Ungültige JSON-Sicherungsdatei!</span>
+                  </div>
                 )}
+
+                {/* Secondary Option: Manual Code Paste */}
+                <details className="text-xs text-slate-400 pt-1 group">
+                  <summary className="cursor-pointer hover:text-slate-200 list-none flex items-center justify-between text-[11px] py-1">
+                    <span>Oder JSON-Text manuell einfügen</span>
+                    <span className="text-slate-500 group-open:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <div className="space-y-2 pt-2">
+                    <textarea
+                      value={importText}
+                      onChange={e => setImportText(e.target.value)}
+                      placeholder="JSON-Code hier einfügen..."
+                      rows={3}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 font-mono focus:border-emerald-500 focus:outline-none"
+                    />
+                    <button
+                      onClick={handleImport}
+                      disabled={!importText.trim()}
+                      className="w-full py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 text-slate-200 font-semibold rounded-lg text-xs transition-colors flex items-center justify-center space-x-1.5"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Code importieren</span>
+                    </button>
+                  </div>
+                </details>
               </div>
             </div>
           </div>
