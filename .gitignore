@@ -26,3 +26,7 @@ dist-ssr
 # Sync temp files
 sync-storage.json
 .system_generated
+
+*.exe
+.data/
+
