@@ -28,7 +28,7 @@ export const sharePdfDoc = async (doc: jsPDF, filename: string, title: string) =
 
   // Fallback for browsers without Web Share Level 2 file sharing support
   doc.save(cleanFilename);
-  const textMsg = encodeURIComponent(`${title} PDF olarak indirildi. WhatsApp üzerinden ekleyebilirsiniz.`);
+  const textMsg = encodeURIComponent(`${title} PDF wurde heruntergeladen. Sie können die Datei per WhatsApp teilen.`);
   window.open(`https://wa.me/?text=${textMsg}`, '_blank');
 };
 
@@ -195,7 +195,7 @@ export const createAreaMaterialPdfDoc = (baustelle: Baustelle, area: Area) => {
 
   autoTable(doc, {
     startY: 58,
-    head: [['#', 'Material', 'Kategorie', 'Soll', 'Ist (Vor Ort)', 'Eksik (Fehlt)', 'Status', 'Notiz']],
+    head: [['#', 'Material', 'Kategorie', 'Soll', 'Ist (Vor Ort)', 'Fehlmenge', 'Status', 'Notiz']],
     body: tableData,
     theme: 'grid',
     headStyles: {
