@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { Order, OrderItem } from '../types';
 import { CheckCircle2, AlertTriangle, PackageCheck, X, Truck } from 'lucide-react';
@@ -84,11 +85,11 @@ export const DeliveryCheckModal: React.FC<DeliveryCheckModalProps> = ({ order, o
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto safe-top-header safe-bottom-nav">
-      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-3xl w-full shadow-2xl border border-slate-100 text-slate-900 max-h-[calc(100dvh-2.5rem)] sm:max-h-[90vh] flex flex-col my-auto overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-2 sm:p-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-3xl w-full shadow-2xl border border-slate-100 text-slate-900 max-h-[88dvh] sm:max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="p-4 sm:p-6 border-b border-slate-100 flex items-start justify-between shrink-0 bg-white sticky top-0 z-20">
+        <div className="p-4 sm:p-6 border-b border-slate-100 flex items-start justify-between shrink-0 bg-white">
           <div>
             <div className="inline-flex items-center space-x-1.5 text-xs font-bold text-sky-600 uppercase tracking-wider mb-1">
               <Truck className="w-4 h-4" />
@@ -125,7 +126,7 @@ export const DeliveryCheckModal: React.FC<DeliveryCheckModalProps> = ({ order, o
         </div>
 
         {/* Items Table / Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 sm:px-6 pb-4 space-y-4 overscroll-contain flex flex-col justify-between">
+        <form id="delivery-check-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 sm:px-6 pb-4 space-y-4 overscroll-contain">
           <div className="space-y-3">
             {order.items.map(item => {
               const deliveryState = itemDeliveries[item.id] || { deliveredQty: 0, isFlaggedMissing: false, flagNote: '' };
@@ -212,26 +213,28 @@ export const DeliveryCheckModal: React.FC<DeliveryCheckModalProps> = ({ order, o
               );
             })}
           </div>
-
-          {/* Bottom Actions */}
-          <div className="pt-3.5 border-t border-slate-100 flex items-center justify-end space-x-3 shrink-0 bg-white sticky bottom-0 z-10">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 sm:px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors"
-            >
-              {t.cancel}
-            </button>
-            <button
-              type="submit"
-              className="px-4 sm:px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-emerald-600/25 transition-all flex items-center space-x-2"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Wareneingang buchen</span>
-            </button>
-          </div>
         </form>
+
+        {/* Bottom Actions */}
+        <div className="p-3.5 sm:p-4 border-t border-slate-100 flex items-center justify-end space-x-3 shrink-0 bg-slate-50" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.75rem)' }}>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 sm:px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors"
+          >
+            {t.cancel}
+          </button>
+          <button
+            type="submit"
+            form="delivery-check-form"
+            className="px-4 sm:px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-emerald-600/25 transition-all flex items-center space-x-2"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span>Wareneingang buchen</span>
+          </button>
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

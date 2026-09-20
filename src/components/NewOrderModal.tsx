@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import {
   ShoppingBag,
@@ -231,11 +232,11 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto safe-top-header safe-bottom-nav">
-      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-3xl w-full shadow-2xl border border-slate-100 text-slate-900 max-h-[calc(100dvh-2.5rem)] sm:max-h-[90vh] flex flex-col my-auto overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-2 sm:p-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-3xl w-full shadow-2xl border border-slate-100 text-slate-900 max-h-[88dvh] sm:max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="p-4 sm:p-6 border-b border-slate-100 flex items-start justify-between shrink-0 bg-white sticky top-0 z-20">
+        <div className="p-4 sm:p-6 border-b border-slate-100 flex items-start justify-between shrink-0 bg-white">
           <div>
             <div className="inline-flex items-center space-x-1.5 text-xs font-bold text-sky-600 uppercase tracking-wider mb-1">
               <ShoppingBag className="w-4 h-4" />
@@ -566,7 +567,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
         </div>
 
         {/* Bottom Actions */}
-        <div className="pt-3.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 shrink-0 bg-white sticky bottom-0 z-10">
+        <div className="p-3.5 sm:p-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 shrink-0 bg-slate-50" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.75rem)' }}>
           <button
             type="button"
             onClick={onClose}
@@ -587,7 +588,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
             </button>
 
             <button
-              type="submit"
+              type="button"
               disabled={items.length === 0}
               onClick={e => handleSubmit(e, false)}
               className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white font-bold rounded-xl text-xs shadow-lg shadow-sky-600/25 transition-all"
@@ -597,6 +598,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

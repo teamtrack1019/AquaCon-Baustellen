@@ -109,7 +109,7 @@ const AppContent: React.FC = () => {
         onOpenNewBaustelle={() => setShowNewBaustelleModal(true)}
       />
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-3 sm:pt-6 pb-20 lg:pb-12 overflow-x-hidden">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-3 sm:pt-6 pb-20 lg:pb-12">
         {activeTab === 'dashboard' && (
           <Dashboard
             setActiveTab={setActiveTab}
