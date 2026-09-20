@@ -120,9 +120,9 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="bg-slate-900 text-white shadow-lg sticky top-0 z-40 w-full max-w-full overflow-hidden">
+    <header className="bg-slate-900 text-white shadow-lg sticky top-0 z-40 w-full max-w-full overflow-hidden safe-top-header" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 0.25rem)' }}>
       {/* Top bar with Branding, Role Switcher & Controls */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-1 sm:pt-0">
         <div className="flex items-center justify-between h-14 sm:h-16 gap-2">
           {/* Logo & Brand */}
           <div className="flex items-center space-x-2 sm:space-x-3 cursor-pointer flex-shrink-0" onClick={() => setActiveTab('dashboard')}>

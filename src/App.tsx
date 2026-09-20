@@ -149,7 +149,7 @@ const AppContent: React.FC = () => {
       </main>
 
       {/* Mobile Bottom Navigation Bar */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 z-40 px-1 py-1.5 flex items-center justify-around shadow-2xl">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 z-40 px-1 py-1.5 flex items-center justify-around shadow-2xl safe-bottom-nav" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.5rem)' }}>
         <button
           onClick={() => setActiveTab('dashboard')}
           className={`flex flex-col items-center p-1 rounded-lg text-[9px] font-semibold transition-colors ${
