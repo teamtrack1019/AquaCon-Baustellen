@@ -10,13 +10,18 @@
 }
 
 @layer base {
-  html, body {
-    @apply bg-slate-900 text-slate-100 min-h-screen font-sans overflow-x-hidden w-full;
-    max-width: 100vw;
+  html {
+    @apply bg-slate-900 text-slate-100 font-sans;
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  body {
+    @apply bg-slate-900 text-slate-100 min-h-screen font-sans;
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   #root {
-    @apply min-h-screen w-full overflow-x-hidden;
-    max-width: 100vw;
+    @apply min-h-screen w-full;
   }
 }
 

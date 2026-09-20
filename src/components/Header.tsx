@@ -284,6 +284,15 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
 
+            {/* Quick Refresh Button */}
+            <button
+              onClick={() => window.location.reload()}
+              className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 transition-colors"
+              title="Seite aktualisieren (Neu laden)"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+
             {/* Data / Backup Button */}
             <button
               onClick={() => setShowBackupModal(true)}
