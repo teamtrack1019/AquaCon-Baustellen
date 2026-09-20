@@ -339,13 +339,15 @@ export const Header: React.FC<HeaderProps> = ({
               <>
                 <span className="w-2 h-2 rounded-full flex-shrink-0 animate-pulse bg-sky-400" />
                 <span className="truncate font-semibold text-slate-300">
-                  Admin Zentrale
+                  Admin
                 </span>
                 <button
                   onClick={() => setShowWorkersModal(true)}
-                  className="text-sky-400 hover:text-sky-300 underline font-semibold ml-1 cursor-pointer hidden sm:inline"
+                  className="text-sky-300 hover:text-white font-bold ml-1 px-2 py-0.5 bg-sky-900/60 hover:bg-sky-800 border border-sky-500/40 rounded-lg flex items-center gap-1 text-[11px] shadow-xs cursor-pointer"
+                  title="Mitarbeiter verwalten (Bearbeiten / Neu anlegen)"
                 >
-                  (Mitarbeiter verwalten)
+                  <Users className="w-3 h-3 text-sky-400" />
+                  <span>Mitarbeiter ({workers.length})</span>
                 </button>
                 <button
                   onClick={() => {
@@ -480,7 +482,23 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-400">0000</span>
                 </button>
               ) : (
-                <div className="space-y-1.5">
+                <div className="space-y-2">
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setShowWorkersModal(true);
+                    }}
+                    className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-sky-900/40 hover:bg-sky-900/70 border border-sky-500/40 text-sky-200 font-bold text-xs shadow-xs transition"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <Users className="w-4 h-4 text-sky-400" />
+                      <span>Mitarbeiter verwalten & neu anlegen</span>
+                    </div>
+                    <span className="text-[10px] bg-sky-800 text-white font-mono px-2 py-0.5 rounded-full border border-sky-600">
+                      {workers.length} Monteure
+                    </span>
+                  </button>
+
                   <div className="flex items-center justify-between px-3 py-2 bg-sky-950/50 border border-sky-500/30 rounded-xl text-xs">
                     <span className="text-sky-300 font-bold flex items-center gap-1.5">
                       <ShieldCheck className="w-4 h-4 text-sky-400" />
@@ -502,9 +520,10 @@ export const Header: React.FC<HeaderProps> = ({
                       setPinModalMode('change');
                       setShowPinModal(true);
                     }}
-                    className="w-full text-center text-xs text-amber-400 hover:text-amber-300 py-1"
+                    className="w-full text-center text-xs text-amber-400 hover:text-amber-300 py-1 font-semibold flex items-center justify-center gap-1"
                   >
-                    🔑 Admin-PIN ändern
+                    <KeyRound className="w-3.5 h-3.5" />
+                    <span>Admin-PIN ändern</span>
                   </button>
                 </div>
               )}

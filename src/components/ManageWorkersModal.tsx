@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { Users, UserPlus, Trash2, Edit2, X, Check, Phone, Briefcase, ShieldCheck } from 'lucide-react';
 import { WorkerProfile } from '../types';
@@ -59,11 +60,11 @@ export const ManageWorkersModal: React.FC<ManageWorkersModalProps> = ({ onClose 
     setShowDeleteConfirmId(null);
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-      <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 text-slate-900 max-h-[90vh] flex flex-col">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-2 sm:p-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 text-slate-900 max-h-[88dvh] sm:max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="flex items-start justify-between pb-4 border-b border-slate-100 flex-shrink-0">
+        <div className="p-4 sm:p-6 border-b border-slate-100 flex items-start justify-between shrink-0 bg-white">
           <div className="flex items-center space-x-3">
             <div className="p-3 bg-sky-100 text-sky-700 rounded-2xl shadow-2xs">
               <Users className="w-6 h-6" />
@@ -281,20 +282,21 @@ export const ManageWorkersModal: React.FC<ManageWorkersModalProps> = ({ onClose 
         </div>
 
         {/* Footer */}
-        <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+        <div className="p-3.5 sm:p-4 border-t border-slate-100 flex items-center justify-between text-xs shrink-0 bg-slate-50" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.75rem)' }}>
           <div className="text-[11px] text-slate-500 flex items-center space-x-1.5">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>Änderungen werden live mit allen Geräten synchronisiert.</span>
+            <span>Mitarbeiter live synchronisiert</span>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition-colors"
+            className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition-colors"
           >
-            Fertig
+            Fertig / Schließen
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
