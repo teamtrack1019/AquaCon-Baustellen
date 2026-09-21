@@ -357,7 +357,7 @@ export const CatalogView: React.FC = () => {
           >
             Alle Längen
           </button>
-          {['M16', 'M20'].map(m => (
+          {['M12', 'M16', 'M20', 'M24'].map(m => (
             <button
               key={m}
               onClick={() => setSelectedDimension(m)}

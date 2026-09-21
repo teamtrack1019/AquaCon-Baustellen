@@ -490,61 +490,100 @@ const generatePvcCatalog = (): CatalogItem[] => {
 const generateScrewCatalog = (): CatalogItem[] => {
   const items: CatalogItem[] = [];
 
-  // M16 lengths: 50 to 200 (step 5)
-  const m16Lengths: number[] = [];
-  for (let l = 50; l <= 200; l += 5) {
-    m16Lengths.push(l);
-  }
+  const m12Lengths = [40, 50, 60, 70, 80, 90, 100, 110, 120];
+  const m16Lengths = [40, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 110, 120, 130, 140, 150, 160, 180, 200];
+  const m20Lengths = [60, 65, 70, 75, 80, 85, 90, 95, 100, 110, 120, 130, 140, 150, 160, 180, 200, 220, 240];
+  const m24Lengths = [80, 90, 100, 110, 120, 130, 140, 150, 160, 180, 200, 220, 240, 260];
 
-  // M20 lengths: 60 to 240 (step 5)
-  const m20Lengths: number[] = [];
-  for (let l = 60; l <= 240; l += 5) {
-    m20Lengths.push(l);
-  }
-
+  let vzCounter = 1;
   // 1. Verzinkte Schraubensätze -> OZ 01.04.06.xxx
-  m16Lengths.forEach((len, idx) => {
+  m12Lengths.forEach(len => {
+    items.push({
+      id: `cat-schr-vz-m12-${len}`,
+      name: `Schraubensatz verzinkt M12 x ${len}`,
+      category: 'Verzinkte Schrauben',
+      unit: 'Stk.',
+      articleNumber: `OZ 01.04.06.${pad3(vzCounter++)}`,
+      notes: `Schraubensatz verzinkt M12 x ${len} mm (inkl. Mutter & 2 U-Scheiben)`
+    });
+  });
+
+  m16Lengths.forEach(len => {
     items.push({
       id: `cat-schr-vz-m16-${len}`,
       name: `Schraubensatz verzinkt M16 x ${len}`,
       category: 'Verzinkte Schrauben',
       unit: 'Stk.',
-      articleNumber: `OZ 01.04.06.${pad3(idx + 1)}`,
+      articleNumber: `OZ 01.04.06.${pad3(vzCounter++)}`,
       notes: `Schraubensatz verzinkt M16 x ${len} mm (inkl. Mutter & 2 U-Scheiben)`
     });
   });
 
-  m20Lengths.forEach((len, idx) => {
+  m20Lengths.forEach(len => {
     items.push({
       id: `cat-schr-vz-m20-${len}`,
       name: `Schraubensatz verzinkt M20 x ${len}`,
       category: 'Verzinkte Schrauben',
       unit: 'Stk.',
-      articleNumber: `OZ 01.04.06.${pad3(m16Lengths.length + idx + 1)}`,
+      articleNumber: `OZ 01.04.06.${pad3(vzCounter++)}`,
       notes: `Schraubensatz verzinkt M20 x ${len} mm (inkl. Mutter & 2 U-Scheiben)`
     });
   });
 
+  m24Lengths.forEach(len => {
+    items.push({
+      id: `cat-schr-vz-m24-${len}`,
+      name: `Schraubensatz verzinkt M24 x ${len}`,
+      category: 'Verzinkte Schrauben',
+      unit: 'Stk.',
+      articleNumber: `OZ 01.04.06.${pad3(vzCounter++)}`,
+      notes: `Schraubensatz verzinkt M24 x ${len} mm (inkl. Mutter & 2 U-Scheiben)`
+    });
+  });
+
+  let vaCounter = 1;
   // 2. VA Schraubensätze -> OZ 01.04.06.xxx (fortlaufend)
-  m16Lengths.forEach((len, idx) => {
+  m12Lengths.forEach(len => {
+    items.push({
+      id: `cat-schr-va-m12-${len}`,
+      name: `Schraubensatz VA M12 x ${len}`,
+      category: 'VA Schrauben',
+      unit: 'Stk.',
+      articleNumber: `OZ 01.04.06.${pad3(vzCounter + vaCounter++)}`,
+      notes: `Schraubensatz Edelstahl VA M12 x ${len} mm (inkl. Mutter & 2 U-Scheiben)`
+    });
+  });
+
+  m16Lengths.forEach(len => {
     items.push({
       id: `cat-schr-va-m16-${len}`,
       name: `Schraubensatz VA M16 x ${len}`,
       category: 'VA Schrauben',
       unit: 'Stk.',
-      articleNumber: `OZ 01.04.06.${pad3(m16Lengths.length + m20Lengths.length + idx + 1)}`,
+      articleNumber: `OZ 01.04.06.${pad3(vzCounter + vaCounter++)}`,
       notes: `Schraubensatz Edelstahl VA M16 x ${len} mm (inkl. Mutter & 2 U-Scheiben)`
     });
   });
 
-  m20Lengths.forEach((len, idx) => {
+  m20Lengths.forEach(len => {
     items.push({
       id: `cat-schr-va-m20-${len}`,
       name: `Schraubensatz VA M20 x ${len}`,
       category: 'VA Schrauben',
       unit: 'Stk.',
-      articleNumber: `OZ 01.04.06.${pad3(m16Lengths.length * 2 + m20Lengths.length + idx + 1)}`,
+      articleNumber: `OZ 01.04.06.${pad3(vzCounter + vaCounter++)}`,
       notes: `Schraubensatz Edelstahl VA M20 x ${len} mm (inkl. Mutter & 2 U-Scheiben)`
+    });
+  });
+
+  m24Lengths.forEach(len => {
+    items.push({
+      id: `cat-schr-va-m24-${len}`,
+      name: `Schraubensatz VA M24 x ${len}`,
+      category: 'VA Schrauben',
+      unit: 'Stk.',
+      articleNumber: `OZ 01.04.06.${pad3(vzCounter + vaCounter++)}`,
+      notes: `Schraubensatz Edelstahl VA M24 x ${len} mm (inkl. Mutter & 2 U-Scheiben)`
     });
   });
 

@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { MaterialCategory, MaterialUnit, OrderItem } from '../types';
 import { generateOrderPdf } from '../utils/pdfGenerator';
-import { findMatchingFlange } from '../utils/flangeHelper';
+import { findMatchingFlange, getMatchingScrewsForFlange } from '../utils/flangeHelper';
 
 interface NewOrderModalProps {
   prefill?: { baustelleId?: string; areaId?: string };
@@ -132,6 +132,24 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
     setSelectedCatalogItem(null);
     setPickQty(1);
     setCatalogSearch('');
+  };
+
+  const handleAddDirectScrew = (name: string, category: MaterialCategory, qty: number) => {
+    const catItem = catalog.find(c => c.name.toLowerCase() === name.toLowerCase());
+    setItems(prev => [
+      ...prev,
+      {
+        catalogItemId: catItem?.id,
+        name: catItem?.name || name,
+        category,
+        unit: 'Stk.',
+        orderedQty: qty,
+        deliveredQty: 0,
+        flaggedMissingQty: qty,
+        isFlagged: false,
+        status: 'pending'
+      }
+    ]);
   };
 
   const handleAddFreeItem = () => {
@@ -437,14 +455,49 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
               </div>
             </div>
 
-            {/* Auto Flange preview indicator */}
+            {/* Auto Flange & Schrauben preview indicator */}
             {selectedCatalogItem && (() => {
               const flangeCheck = findMatchingFlange(selectedCatalogItem.name, selectedCatalogItem.category, catalog);
-              if (!flangeCheck.matchingFlange) return null;
+              const screwCheck = getMatchingScrewsForFlange(selectedCatalogItem.name, catalog);
+              const qty = Number(pickQty) || 1;
+
+              if (!flangeCheck.matchingFlange && !screwCheck) return null;
+
               return (
-                <div className="bg-amber-100/90 border border-amber-300 rounded-lg px-2.5 py-1.5 text-[11px] flex items-center gap-1.5 text-amber-900 font-medium">
-                  <span>⚡</span>
-                  <span><strong>Automatischer Losflansch:</strong> {flangeCheck.matchingFlange.name} ({Number(pickQty) || 1} Stk.) wird automatisch mitbestellt.</span>
+                <div className="space-y-1.5">
+                  {flangeCheck.matchingFlange && (
+                    <div className="bg-amber-100/90 border border-amber-300 rounded-xl px-3 py-2 text-[11px] flex items-center gap-2 text-amber-900 font-medium">
+                      <span className="text-base">⚡</span>
+                      <span><strong>Automatischer Losflansch:</strong> {flangeCheck.matchingFlange.name} ({qty} Stk.) wird automatisch mitbestellt.</span>
+                    </div>
+                  )}
+
+                  {screwCheck && (
+                    <div className="bg-sky-100/90 border border-sky-300 rounded-xl px-3 py-2 text-[11px] text-sky-950 font-medium flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-base">🔩</span>
+                        <span>
+                          <strong>Passender Schraubensatz:</strong> {screwCheck.countPerFlange * qty}x {screwCheck.metric} x {screwCheck.length} mm (für {qty} Flansch{qty > 1 ? 'e' : ''})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleAddDirectScrew(screwCheck.recommendedNameVz, 'Verzinkte Schrauben', screwCheck.countPerFlange * qty)}
+                          className="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-bold text-[10px] shadow-xs transition"
+                        >
+                          + {screwCheck.countPerFlange * qty}x Verzinkt
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAddDirectScrew(screwCheck.recommendedNameVa, 'VA Schrauben', screwCheck.countPerFlange * qty)}
+                          className="px-2.5 py-1 bg-teal-600 hover:bg-teal-500 text-white rounded-lg font-bold text-[10px] shadow-xs transition"
+                        >
+                          + {screwCheck.countPerFlange * qty}x VA (Edelstahl)
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })()}

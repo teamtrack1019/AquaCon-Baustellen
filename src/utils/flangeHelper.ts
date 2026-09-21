@@ -145,3 +145,71 @@ export const findMatchingFlange = (
     };
   }
 };
+
+export interface MatchingScrewResult {
+  countPerFlange: number;
+  metric: string;
+  length: number;
+  recommendedNameVz: string;
+  recommendedNameVa: string;
+  matchingCatalogItemVz?: CatalogItem;
+  matchingCatalogItemVa?: CatalogItem;
+}
+
+export const getMatchingScrewsForFlange = (
+  materialName: string,
+  catalog: CatalogItem[]
+): MatchingScrewResult | null => {
+  if (!materialName) return null;
+
+  const isFlangeLike = /(?:vorschwei[ßs]bund|bundbuchse|losflansch|flansch|klappe)/i.test(materialName);
+  if (!isFlangeLike) return null;
+
+  let da = 0;
+  const matchDa = materialName.match(/DA\s*(\d+)/i) || materialName.match(/(?:d|DN)\s*(\d+)/i);
+  if (matchDa && matchDa[1]) {
+    da = parseInt(matchDa[1], 10);
+  } else {
+    const matchNum = materialName.match(/\b(\d{2,3})\b/);
+    if (matchNum && matchNum[1]) {
+      da = parseInt(matchNum[1], 10);
+    }
+  }
+
+  if (!da || da < 20) return null;
+
+  let count = 4;
+  let metric = 'M16';
+  let len = 70;
+
+  if (da <= 32) { count = 4; metric = 'M12'; len = 60; }
+  else if (da <= 40) { count = 4; metric = 'M16'; len = 60; }
+  else if (da <= 50) { count = 4; metric = 'M16'; len = 65; }
+  else if (da <= 63) { count = 4; metric = 'M16'; len = 70; }
+  else if (da <= 75) { count = 4; metric = 'M16'; len = 75; }
+  else if (da <= 125) { count = 8; metric = 'M16'; len = 80; }
+  else if (da <= 140) { count = 8; metric = 'M16'; len = 85; }
+  else if (da <= 180) { count = 8; metric = 'M20'; len = 90; }
+  else if (da <= 225) { count = 8; metric = 'M20'; len = 100; }
+  else if (da <= 280) { count = 12; metric = 'M20'; len = 110; }
+  else if (da <= 315) { count = 12; metric = 'M20'; len = 120; }
+  else if (da <= 355) { count = 16; metric = 'M20'; len = 130; }
+  else { count = 16; metric = 'M24'; len = 140; }
+
+  const nameVz = `Schraubensatz verzinkt ${metric} x ${len}`;
+  const nameVa = `Schraubensatz VA ${metric} x ${len}`;
+
+  const itemVz = catalog.find(c => c.name.toLowerCase() === nameVz.toLowerCase() || c.id === `cat-schr-vz-${metric.toLowerCase()}-${len}`);
+  const itemVa = catalog.find(c => c.name.toLowerCase() === nameVa.toLowerCase() || c.id === `cat-schr-va-${metric.toLowerCase()}-${len}`);
+
+  return {
+    countPerFlange: count,
+    metric,
+    length: len,
+    recommendedNameVz: nameVz,
+    recommendedNameVa: nameVa,
+    matchingCatalogItemVz: itemVz,
+    matchingCatalogItemVa: itemVa
+  };
+};
+

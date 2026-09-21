@@ -1007,6 +1007,36 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
                   ))}
                 </div>
 
+                {/* Screw quick thread pills */}
+                {(matCategory === 'Verzinkte Schrauben' || matCategory === 'VA Schrauben') && (
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase">Gewinde:</span>
+                    {['M12', 'M16', 'M20', 'M24'].map(m => (
+                      <button
+                        type="button"
+                        key={m}
+                        onClick={() => setCatalogSearch(m)}
+                        className={`px-2 py-0.5 rounded-md text-[11px] font-bold font-mono transition ${
+                          catalogSearch.includes(m)
+                            ? 'bg-sky-600 text-white'
+                            : 'bg-white text-sky-800 border border-sky-200 hover:bg-sky-100'
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                    {catalogSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setCatalogSearch('')}
+                        className="text-[10px] text-slate-400 hover:text-slate-600 underline ml-auto"
+                      >
+                        Zurücksetzen
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 <div className="relative">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
                   <input
