@@ -345,6 +345,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const lastSyncTimestampRef = React.useRef<number>(0);
+  const localMutationTimestampRef = React.useRef<number>(0);
   const isSyncingFromServerRef = React.useRef<boolean>(false);
 
   // Initial load from server database
@@ -353,8 +354,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const res = await fetch('/api/data');
         if (res.ok) {
+          const contentType = res.headers.get('content-type') || '';
+          if (!contentType.includes('application/json')) return;
           const data = await res.json();
           if (data && !data.empty && data.baustellen && data.orders) {
+            // If local changes were made recently, do not overwrite
+            if (Date.now() - localMutationTimestampRef.current < 2000) return;
+
             isSyncingFromServerRef.current = true;
             if (data.updatedAt) lastSyncTimestampRef.current = data.updatedAt;
             const cleanedBaustellen = (data.baustellen as Baustelle[]).map(b => ({
@@ -423,6 +429,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (isSyncingFromServerRef.current) return;
 
+    localMutationTimestampRef.current = Date.now();
+
     const timer = setTimeout(async () => {
       try {
         const res = await fetch('/api/data', {
@@ -431,15 +439,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           body: JSON.stringify({ baustellen, catalog, orders, aufmassSheets, workers })
         });
         if (res.ok) {
-          const result = await res.json();
-          if (result.updatedAt) {
-            lastSyncTimestampRef.current = result.updatedAt;
+          const contentType = res.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const result = await res.json();
+            if (result.updatedAt) {
+              lastSyncTimestampRef.current = result.updatedAt;
+            }
           }
         }
       } catch (e) {
         // silent fallback
       }
-    }, 200);
+    }, 150);
 
     return () => clearTimeout(timer);
   }, [baustellen, catalog, orders, aufmassSheets, workers]);
@@ -448,10 +459,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
+        // If user made local mutations in the last 3 seconds, do not overwrite with poll
+        if (Date.now() - localMutationTimestampRef.current < 3000) {
+          return;
+        }
+
         const res = await fetch('/api/data');
         if (res.ok) {
+          const contentType = res.headers.get('content-type') || '';
+          if (!contentType.includes('application/json')) return;
           const data = await res.json();
-          if (data && !data.empty && data.updatedAt && data.updatedAt > lastSyncTimestampRef.current) {
+          if (
+            data &&
+            !data.empty &&
+            data.updatedAt &&
+            data.updatedAt > lastSyncTimestampRef.current &&
+            data.updatedAt > localMutationTimestampRef.current
+          ) {
             isSyncingFromServerRef.current = true;
             lastSyncTimestampRef.current = data.updatedAt;
             if (data.baustellen) setBaustellen(data.baustellen);
@@ -498,11 +522,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteWorker = (id: string) => {
+    localMutationTimestampRef.current = Date.now();
     setWorkers(prev => {
       const remaining = prev.filter(w => w.id !== id);
       if (activeWorkerId === id && remaining.length > 0) {
         setActiveWorkerId(remaining[0].id);
       }
+      localStorage.setItem(STORAGE_KEYS.WORKERS, JSON.stringify(remaining));
       return remaining;
     });
   };
@@ -510,6 +536,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Baustellen Actions
   const addBaustelle = (data: Omit<Baustelle, 'id' | 'areas'> & { areas?: Area[] }) => {
     const newId = `bau-${Date.now()}`;
+    localMutationTimestampRef.current = Date.now();
     const newBaustelle: Baustelle = {
       ...data,
       id: newId,
@@ -520,16 +547,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateBaustelle = (id: string, updates: Partial<Baustelle>) => {
+    localMutationTimestampRef.current = Date.now();
     setBaustellen(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
   };
 
   const deleteBaustelle = (id: string) => {
-    setBaustellen(prev => prev.filter(b => b.id !== id));
+    localMutationTimestampRef.current = Date.now();
+    setBaustellen(prev => {
+      const remaining = prev.filter(b => b.id !== id);
+      localStorage.setItem(STORAGE_KEYS.BAUSTELLEN, JSON.stringify(remaining));
+      return remaining;
+    });
   };
 
   // Areas Actions
   const addArea = (baustelleId: string, areaData: { name: string; type: AreaType; customTypeName?: string; description?: string }) => {
     const areaId = `area-${Date.now()}`;
+    localMutationTimestampRef.current = Date.now();
     const newArea: Area = {
       ...areaData,
       id: areaId,
@@ -548,6 +582,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateArea = (baustelleId: string, areaId: string, updates: Partial<Area>) => {
+    localMutationTimestampRef.current = Date.now();
     setBaustellen(prev => prev.map(b => {
       if (b.id === baustelleId) {
         return {
@@ -560,6 +595,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteArea = (baustelleId: string, areaId: string) => {
+    localMutationTimestampRef.current = Date.now();
     setBaustellen(prev => prev.map(b => {
       if (b.id === baustelleId) {
         return {
@@ -1010,29 +1046,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Aufmass Actions
   const saveAufmassSheet = (sheetData: Omit<AufmassSheet, 'id' | 'createdAt'> & { id?: string }): string => {
     const id = sheetData.id || `aufmass-${Date.now()}`;
-    const newSheet: AufmassSheet = {
-      ...sheetData,
-      id,
-      createdAt: sheetData.id 
-        ? (aufmassSheets.find(s => s.id === sheetData.id)?.createdAt || new Date().toISOString())
-        : new Date().toISOString()
-    };
+    localMutationTimestampRef.current = Date.now();
 
     setAufmassSheets(prev => {
+      const existing = prev.find(s => s.id === id);
+      const newSheet: AufmassSheet = {
+        ...sheetData,
+        id,
+        createdAt: existing?.createdAt || new Date().toISOString()
+      };
       const idx = prev.findIndex(s => s.id === id);
+      let updated: AufmassSheet[];
       if (idx >= 0) {
-        const updated = [...prev];
+        updated = [...prev];
         updated[idx] = newSheet;
-        return updated;
+      } else {
+        updated = [newSheet, ...prev];
       }
-      return [newSheet, ...prev];
+      localStorage.setItem(STORAGE_KEYS.AUFMASS, JSON.stringify(updated));
+      return updated;
     });
 
     return id;
   };
 
   const deleteAufmassSheet = (id: string) => {
-    setAufmassSheets(prev => prev.filter(s => s.id !== id));
+    localMutationTimestampRef.current = Date.now();
+    setAufmassSheets(prev => {
+      const remaining = prev.filter(s => s.id !== id);
+      localStorage.setItem(STORAGE_KEYS.AUFMASS, JSON.stringify(remaining));
+      return remaining;
+    });
   };
 
   // Computed Shortages (Eksik Malzemeler)
