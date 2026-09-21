@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   BookOpen,
@@ -23,6 +23,7 @@ export const CatalogView: React.FC = () => {
     t,
     catalog,
     addCatalogItem,
+    updateCatalogItem,
     deleteCatalogItem,
     baustellen,
     addMaterialToArea
@@ -31,6 +32,7 @@ export const CatalogView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingItem, setEditingItem] = useState<CatalogItem | null>(null);
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
   const [showSendToBaustelleModal, setShowSendToBaustelleModal] = useState<CatalogItem | null>(null);
 
@@ -40,6 +42,17 @@ export const CatalogView: React.FC = () => {
   const [itemUnit, setItemUnit] = useState<MaterialUnit>('Stk.');
   const [itemArticleNo, setItemArticleNo] = useState('');
   const [itemNotes, setItemNotes] = useState('');
+
+  // Duplicate Article Number check
+  const duplicateArticleItem = useMemo(() => {
+    const trimmedNo = itemArticleNo.trim().toLowerCase();
+    if (!trimmedNo) return null;
+    return catalog.find(c =>
+      c.articleNumber &&
+      c.articleNumber.trim().toLowerCase() === trimmedNo &&
+      (!editingItem || c.id !== editingItem.id)
+    );
+  }, [itemArticleNo, catalog, editingItem]);
 
   // Bulk import state
   const [bulkText, setBulkText] = useState('');
@@ -164,22 +177,65 @@ export const CatalogView: React.FC = () => {
     return (a.articleNumber || a.name).localeCompare(b.articleNumber || b.name, 'de', { numeric: true });
   });
 
-  const handleCreateItem = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!itemName.trim()) return;
+  const handleOpenAddModal = () => {
+    setEditingItem(null);
+    setItemName('');
+    setItemCategory(selectedCategory !== 'all' ? (selectedCategory as MaterialCategory) : 'PE Rohre & Fittings');
+    setItemUnit('Stk.');
+    setItemArticleNo('');
+    setItemNotes('');
+    setShowAddModal(true);
+  };
 
-    addCatalogItem({
-      name: itemName.trim(),
-      category: itemCategory,
-      unit: itemUnit,
-      articleNumber: itemArticleNo.trim() || undefined,
-      notes: itemNotes.trim() || undefined
-    });
+  const handleOpenEditModal = (item: CatalogItem) => {
+    setEditingItem(item);
+    setItemName(item.name);
+    setItemCategory(item.category);
+    setItemUnit(item.unit);
+    setItemArticleNo(item.articleNumber || '');
+    setItemNotes(item.notes || '');
+    setShowAddModal(true);
+  };
+
+  const handleSaveItem = (e: React.FormEvent) => {
+    e.preventDefault();
+    const finalName = itemName.trim();
+    if (!finalName) return;
+
+    if (duplicateArticleItem) {
+      alert(`Diese Artikelnummer "${itemArticleNo.trim()}" existiert bereits für den Artikel "${duplicateArticleItem.name}" (${duplicateArticleItem.category})! Bitte wählen Sie eine andere Artikelnummer.`);
+      return;
+    }
+
+    if (editingItem) {
+      updateCatalogItem(editingItem.id, {
+        name: finalName,
+        category: itemCategory,
+        unit: itemUnit,
+        articleNumber: itemArticleNo.trim() || undefined,
+        notes: itemNotes.trim() || undefined
+      });
+    } else {
+      addCatalogItem({
+        name: finalName,
+        category: itemCategory,
+        unit: itemUnit,
+        articleNumber: itemArticleNo.trim() || undefined,
+        notes: itemNotes.trim() || undefined
+      });
+    }
 
     setShowAddModal(false);
+    setEditingItem(null);
     setItemName('');
     setItemArticleNo('');
     setItemNotes('');
+  };
+
+  const handleDeleteCatalogItem = (item: CatalogItem) => {
+    if (window.confirm(`Möchten Sie den Artikel "${item.name}" wirklich aus dem A-Z Katalog löschen?`)) {
+      deleteCatalogItem(item.id);
+    }
   };
 
   const handleBulkImport = (e: React.FormEvent) => {
@@ -256,7 +312,7 @@ export const CatalogView: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setShowAddModal(true)}
+              onClick={handleOpenAddModal}
               className="px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-95 flex items-center space-x-1.5"
             >
               <Plus className="w-4 h-4" />
@@ -414,6 +470,47 @@ export const CatalogView: React.FC = () => {
                 <p className="text-[11px] text-slate-400 italic mt-1">{item.notes}</p>
               )}
             </div>
+
+            <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSendToBaustelleModal(item);
+                  if (baustellen.length > 0) {
+                    setTargetBaustelleId(baustellen[0].id);
+                    if (baustellen[0].areas.length > 0) {
+                      setTargetAreaId(baustellen[0].areas[0].id);
+                    }
+                  }
+                }}
+                className="px-2.5 py-1.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-600 text-slate-600 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5"
+                title="In Baustelle einfügen"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Einfügen</span>
+              </button>
+
+              {role === 'admin' && (
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditModal(item)}
+                    className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"
+                    title="Artikel bearbeiten"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteCatalogItem(item)}
+                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                    title="Artikel löschen"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -427,21 +524,21 @@ export const CatalogView: React.FC = () => {
         </div>
       )}
 
-      {/* Modal: Single Add Item */}
+      {/* Modal: Single Add / Edit Item */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-slate-900">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <h3 className="text-base font-bold text-slate-900 flex items-center space-x-2">
                 <BookOpen className="w-5 h-5 text-sky-600" />
-                <span>Neuen Katalogartikel anlegen</span>
+                <span>{editingItem ? 'Artikel bearbeiten' : 'Neuen Katalogartikel anlegen'}</span>
               </h3>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => { setShowAddModal(false); setEditingItem(null); }} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateItem} className="space-y-4 text-xs">
+            <form onSubmit={handleSaveItem} className="space-y-4 text-xs">
               <div>
                 <label className="block font-bold text-slate-700 mb-1">{t.material} *</label>
                 <input
@@ -499,6 +596,27 @@ export const CatalogView: React.FC = () => {
                   value={itemArticleNo}
                   onChange={e => setItemArticleNo(e.target.value)}
                   placeholder="z. B. PE-63-90"
+                  className={`w-full bg-slate-50 border rounded-xl px-3 py-2 text-slate-900 text-xs focus:bg-white focus:ring-2 focus:outline-none ${
+                    duplicateArticleItem
+                      ? 'border-rose-400 focus:ring-rose-500 bg-rose-50/30'
+                      : 'border-slate-300 focus:ring-sky-500'
+                  }`}
+                />
+                {duplicateArticleItem && (
+                  <div className="mt-1.5 p-2 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-[11px] font-semibold flex items-center gap-1.5">
+                    <span>⚠️</span>
+                    <span>Diese Artikelnummer ist bereits vergeben für &quot;{duplicateArticleItem.name}&quot; ({duplicateArticleItem.category})!</span>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Notiz / Spezifikation (optional)</label>
+                <input
+                  type="text"
+                  value={itemNotes}
+                  onChange={e => setItemNotes(e.target.value)}
+                  placeholder="z. B. PN 16, SDR 11, etc."
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
@@ -506,14 +624,19 @@ export const CatalogView: React.FC = () => {
               <div className="pt-3 flex items-center justify-end space-x-2">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => { setShowAddModal(false); setEditingItem(null); }}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition-colors"
                 >
                   {t.cancel}
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-colors"
+                  disabled={!!duplicateArticleItem}
+                  className={`px-4 py-2 text-white font-bold rounded-xl text-xs transition-colors ${
+                    duplicateArticleItem
+                      ? 'bg-slate-300 cursor-not-allowed text-slate-500'
+                      : 'bg-sky-600 hover:bg-sky-500'
+                  }`}
                 >
                   Speichern
                 </button>

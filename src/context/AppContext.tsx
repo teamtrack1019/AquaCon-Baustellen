@@ -180,32 +180,25 @@ const mergeWithInitialCatalog = (items: CatalogItem[]): CatalogItem[] => {
 
   const cleanedExisting = items
     .filter(item => !item.id.startsWith('cat-pe-b45-') && !(/^PE Bogen 45°/i.test(item.name)))
-    // Purge deprecated default items from 'Einbauteile & Becken' (e.g. skimmer, old duese, bodenablauf, etc.)
-    .filter(item => {
-      if (item.category === 'Einbauteile & Becken' && (item.id.startsWith('cat-skimmer-') || item.id.startsWith('cat-duese-') || item.id.startsWith('cat-bodenablauf-') || item.id.startsWith('cat-led-') || item.id.startsWith('cat-anschlussdose'))) {
-        return false;
-      }
-      return true;
-    })
     .map(item => {
-    existingIds.add(item.id);
-    const initial = initialMap.get(item.id);
-    if (initial) {
+      existingIds.add(item.id);
+      const initial = initialMap.get(item.id);
+      if (initial) {
+        return {
+          ...item,
+          name: item.name || initial.name,
+          articleNumber: item.articleNumber || initial.articleNumber,
+          category: sanitizeCategory(item.category || initial.category),
+          unit: sanitizeUnit(item.unit || initial.unit)
+        };
+      }
       return {
         ...item,
-        name: initial.name,
-        articleNumber: initial.articleNumber,
-        category: sanitizeCategory(item.category || initial.category),
-        unit: sanitizeUnit(item.unit || initial.unit)
+        name: item.name ? item.name.replace(/\bPP-Stahl\b/gi, '').replace(/\s+/g, ' ').trim() : item.name,
+        category: sanitizeCategory(item.category),
+        unit: sanitizeUnit(item.unit)
       };
-    }
-    return {
-      ...item,
-      name: item.name.replace(/\bPP-Stahl\b/gi, '').replace(/\s+/g, ' ').trim(),
-      category: sanitizeCategory(item.category),
-      unit: sanitizeUnit(item.unit)
-    };
-  });
+    });
 
   const missingInitialItems = INITIAL_CATALOG.filter(i => !existingIds.has(i.id));
   return [...cleanedExisting, ...missingInitialItems];
@@ -714,21 +707,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Catalog Actions
   const addCatalogItem = (itemData: Omit<CatalogItem, 'id'>) => {
-    const newId = `cat-${Date.now()}`;
+    const newId = `cat-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+    localMutationTimestampRef.current = Date.now();
     const newItem: CatalogItem = {
       ...itemData,
       id: newId
     };
-    setCatalog(prev => [newItem, ...prev]);
+    setCatalog(prev => {
+      const updated = [newItem, ...prev];
+      localStorage.setItem(STORAGE_KEYS.CATALOG, JSON.stringify(updated));
+      return updated;
+    });
     return newId;
   };
 
   const updateCatalogItem = (id: string, updates: Partial<CatalogItem>) => {
-    setCatalog(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+    localMutationTimestampRef.current = Date.now();
+    setCatalog(prev => {
+      const updated = prev.map(c => c.id === id ? { ...c, ...updates } : c);
+      localStorage.setItem(STORAGE_KEYS.CATALOG, JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const deleteCatalogItem = (id: string) => {
-    setCatalog(prev => prev.filter(c => c.id !== id));
+    localMutationTimestampRef.current = Date.now();
+    setCatalog(prev => {
+      const updated = prev.filter(c => c.id !== id);
+      localStorage.setItem(STORAGE_KEYS.CATALOG, JSON.stringify(updated));
+      return updated;
+    });
   };
 
   // Orders Actions
