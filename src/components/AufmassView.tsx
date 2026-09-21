@@ -30,6 +30,7 @@ import {
   SCREW_LENGTHS_MAP,
   buildScrewName
 } from '../utils/flangeHelper';
+import { sortCatalogItems } from '../utils/catalogSorter';
 
 interface AufmassViewProps {
   initialBaustelleId?: string | null;
@@ -139,9 +140,9 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
     'Sonstiges'
   ];
 
-  // Filter catalog items
+  // Filter and sort catalog items
   const filteredCatalog = useMemo(() => {
-    return catalog.filter(item => {
+    const filtered = catalog.filter(item => {
       if (selectedCategory !== 'all' && item.category !== selectedCategory) return false;
       if (searchTerm.trim()) {
         const query = searchTerm.toLowerCase();
@@ -153,6 +154,7 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
       }
       return true;
     });
+    return sortCatalogItems(filtered);
   }, [catalog, selectedCategory, searchTerm]);
 
   // Parse string like "0.5 + 1.0 + 2.2 + 1.8 + 1.0" or "0,5, 1,0, 2.2" into number array

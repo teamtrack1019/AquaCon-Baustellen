@@ -15,6 +15,7 @@ import {
   Send
 } from 'lucide-react';
 import { CatalogItem, MaterialCategory, MaterialUnit } from '../types';
+import { sortCatalogItems } from '../utils/catalogSorter';
 
 export const CatalogView: React.FC = () => {
   const {
@@ -67,60 +68,8 @@ export const CatalogView: React.FC = () => {
   const [selectedDimension, setSelectedDimension] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
 
-  const getItemSortKey = (name: string, articleNumber?: string) => {
-    // 0. Screws (e.g. Schraubensatz verzinkt M16 x 50, Schraubensatz VA M20 x 80)
-    const screwMatch = name.match(/^((?:Schraubensatz|Schraube).*?\bM\d+)\s*x\s*(\d+)/i);
-    if (screwMatch) {
-      return {
-        baseType: screwMatch[1].trim(),
-        da1: parseInt(screwMatch[2], 10),
-        da2: 0,
-        oz: articleNumber || ''
-      };
-    }
-
-    let da1 = 0;
-    let da2 = 0;
-
-    // 1. Extract DA dimensions (e.g. "DA 25/20", "DA 25 / 20", "DA 110", "DA 20")
-    const daMatch = name.match(/DA\s*(\d+)(?:\s*[/x]\s*(\d+))?/i);
-    if (daMatch) {
-      da1 = parseInt(daMatch[1], 10);
-      da2 = daMatch[2] ? parseInt(daMatch[2], 10) : 0;
-    } else {
-      // If no DA, check for DN (e.g. "Armatur DN 50", "Klappe DN 40")
-      const dnMatch = name.match(/DN\s*(\d+)(?:\s*[/x]\s*(\d+))?/i);
-      if (dnMatch) {
-        da1 = parseInt(dnMatch[1], 10);
-        da2 = dnMatch[2] ? parseInt(dnMatch[2], 10) : 0;
-      } else {
-        const numMatch = name.match(/\d+/);
-        if (numMatch) {
-          da1 = parseInt(numMatch[0], 10);
-        }
-      }
-    }
-
-    // 2. Extract base product type (e.g. "PVC T-Stück egal", "PVC Bogen 45°", "PE Druckrohr")
-    // Cut off everything starting from " DN " or " DA "
-    let baseType = name;
-    const cutIndex = name.search(/\s+(?:DN|DA)\s+\d+/i);
-    if (cutIndex !== -1) {
-      baseType = name.substring(0, cutIndex).trim();
-    } else {
-      baseType = name.replace(/\s*\d+.*$/, '').trim();
-    }
-
-    return {
-      baseType,
-      da1,
-      da2,
-      oz: articleNumber || ''
-    };
-  };
-
-  const filteredCatalog = catalog
-    .filter(item => {
+  const filteredCatalog = useMemo(() => {
+    const filtered = catalog.filter(item => {
       const matchesSearch =
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.articleNumber && item.articleNumber.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -144,38 +93,10 @@ export const CatalogView: React.FC = () => {
       })();
 
       return matchesSearch && matchesCategory && matchesDimension && matchesType;
-    })
-    .sort((a, b) => {
-      const getBaseTypeOrder = (baseType: string) => {
-        // Ensure 90° Bögen come before 45° Bögen
-        if (/90°/i.test(baseType)) return baseType.replace(/90°/i, '01_90°');
-        if (/45°/i.test(baseType)) return baseType.replace(/45°/i, '02_45°');
-        return baseType;
-      };
+    });
 
-    const isOzA = /^OZ\s+\d/i.test(a.articleNumber || '');
-    const isOzB = /^OZ\s+\d/i.test(b.articleNumber || '');
-    if (isOzA && isOzB) {
-      return (a.articleNumber || '').localeCompare(b.articleNumber || '', 'de', { numeric: true });
-    }
-
-    const keyA = getItemSortKey(a.name, a.articleNumber);
-    const keyB = getItemSortKey(b.name, b.articleNumber);
-
-    const orderA = getBaseTypeOrder(keyA.baseType);
-    const orderB = getBaseTypeOrder(keyB.baseType);
-
-    if (orderA !== orderB) {
-      return orderA.localeCompare(orderB, 'de');
-    }
-    if (keyA.da1 !== keyB.da1) {
-      return keyA.da1 - keyB.da1;
-    }
-    if (keyA.da2 !== keyB.da2) {
-      return keyA.da2 - keyB.da2;
-    }
-    return (a.articleNumber || a.name).localeCompare(b.articleNumber || b.name, 'de', { numeric: true });
-  });
+    return sortCatalogItems(filtered);
+  }, [catalog, searchTerm, selectedCategory, selectedDimension, selectedType]);
 
   const handleOpenAddModal = () => {
     setEditingItem(null);

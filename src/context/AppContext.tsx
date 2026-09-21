@@ -23,6 +23,7 @@ import { INITIAL_BAUSTELLEN } from '../data/initialBaustellen';
 import { INITIAL_ORDERS } from '../data/initialOrders';
 import { INITIAL_WORKERS } from '../data/initialWorkers';
 import { translations } from '../i18n/translations';
+import { sortCatalogItems } from '../utils/catalogSorter';
 
 interface AppContextType {
   role: Role;
@@ -201,7 +202,7 @@ const mergeWithInitialCatalog = (items: CatalogItem[]): CatalogItem[] => {
     });
 
   const missingInitialItems = INITIAL_CATALOG.filter(i => !existingIds.has(i.id));
-  return [...cleanedExisting, ...missingInitialItems];
+  return sortCatalogItems([...cleanedExisting, ...missingInitialItems]);
 };
 
 const sanitizeAreaName = (name: string): string => {
@@ -714,7 +715,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: newId
     };
     setCatalog(prev => {
-      const updated = [newItem, ...prev];
+      const updated = sortCatalogItems([newItem, ...prev]);
       localStorage.setItem(STORAGE_KEYS.CATALOG, JSON.stringify(updated));
       return updated;
     });
@@ -724,7 +725,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateCatalogItem = (id: string, updates: Partial<CatalogItem>) => {
     localMutationTimestampRef.current = Date.now();
     setCatalog(prev => {
-      const updated = prev.map(c => c.id === id ? { ...c, ...updates } : c);
+      const updated = sortCatalogItems(prev.map(c => c.id === id ? { ...c, ...updates } : c));
       localStorage.setItem(STORAGE_KEYS.CATALOG, JSON.stringify(updated));
       return updated;
     });
