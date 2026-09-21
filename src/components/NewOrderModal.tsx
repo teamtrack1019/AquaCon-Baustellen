@@ -17,6 +17,7 @@ import {
 import { MaterialCategory, MaterialUnit, OrderItem } from '../types';
 import { generateOrderPdf } from '../utils/pdfGenerator';
 import { findMatchingFlange, getMatchingScrewsForFlange } from '../utils/flangeHelper';
+import { ScrewConfigurator } from './ScrewConfigurator';
 
 interface NewOrderModalProps {
   prefill?: { baustelleId?: string; areaId?: string };
@@ -57,6 +58,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
   const [freeName, setFreeName] = useState('');
   const [freeUnit, setFreeUnit] = useState<MaterialUnit>('Stk.');
   const [freeQty, setFreeQty] = useState<string | number>(1);
+  const [showScrewWizard, setShowScrewWizard] = useState(false);
 
   const currentBaustelle = baustellen.find(b => b.id === selectedBaustelleId);
 
@@ -384,11 +386,31 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
             </div>
           </div>
 
-          {/* Item Selector Section */}
-          <div className="bg-sky-50/70 p-4 rounded-2xl border border-sky-100 space-y-3">
-            <span className="font-bold text-sky-950 block">
-              ➕ Materialien zur Bestellung hinzufügen:
-            </span>
+          <div className="bg-sky-50/50 p-4 rounded-2xl border border-sky-100 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-bold text-sky-950 block">
+                ➕ Materialien zur Bestellung hinzufügen:
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowScrewWizard(!showScrewWizard)}
+                className="px-3 py-1 bg-gradient-to-r from-sky-600 to-teal-600 hover:from-sky-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>🔩</span>
+                <span>{showScrewWizard ? 'Schrauben-Assistent schließen' : 'Schraubensatz konfigurieren (M12-M24)'}</span>
+              </button>
+            </div>
+
+            {showScrewWizard && (
+              <div className="my-2">
+                <ScrewConfigurator
+                  onSelectScrew={(screw) => {
+                    handleAddDirectScrew(screw.name, screw.category, screw.quantity);
+                    setShowScrewWizard(false);
+                  }}
+                />
+              </div>
+            )}
 
             {/* A-Z Catalog Quick Selection */}
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">

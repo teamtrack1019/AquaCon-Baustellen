@@ -29,6 +29,7 @@ import {
 import { AreaType, MaterialCategory, MaterialUnit, Area, Baustelle, Order } from '../types';
 import { generateAreaMaterialPdf, shareAreaMaterialPdf } from '../utils/pdfGenerator';
 import { DeliveryCheckModal } from './DeliveryCheckModal';
+import { ScrewConfigurator } from './ScrewConfigurator';
 import { findMatchingFlange } from '../utils/flangeHelper';
 
 interface BaustellenViewProps {
@@ -100,6 +101,7 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
   const [matZusatz, setMatZusatz] = useState<string | number>('0');
   const [matNotes, setMatNotes] = useState('');
   const [catalogSearch, setCatalogSearch] = useState('');
+  const [showScrewWizard, setShowScrewWizard] = useState(false);
 
   // Determine current active Baustelle
   const activeBaustelle = baustellen.find(b => b.id === selectedBaustelleId) || baustellen[0];
@@ -1007,33 +1009,32 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
                   ))}
                 </div>
 
-                {/* Screw quick thread pills */}
-                {(matCategory === 'Verzinkte Schrauben' || matCategory === 'VA Schrauben') && (
-                  <div className="flex items-center gap-1.5 pt-1">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">Gewinde:</span>
-                    {['M12', 'M16', 'M20', 'M24'].map(m => (
-                      <button
-                        type="button"
-                        key={m}
-                        onClick={() => setCatalogSearch(m)}
-                        className={`px-2 py-0.5 rounded-md text-[11px] font-bold font-mono transition ${
-                          catalogSearch.includes(m)
-                            ? 'bg-sky-600 text-white'
-                            : 'bg-white text-sky-800 border border-sky-200 hover:bg-sky-100'
-                        }`}
-                      >
-                        {m}
-                      </button>
-                    ))}
-                    {catalogSearch && (
-                      <button
-                        type="button"
-                        onClick={() => setCatalogSearch('')}
-                        className="text-[10px] text-slate-400 hover:text-slate-600 underline ml-auto"
-                      >
-                        Zurücksetzen
-                      </button>
-                    )}
+                {/* Screw Configurator Launcher & Thread Pills */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-sky-200/60">
+                  <button
+                    type="button"
+                    onClick={() => setShowScrewWizard(!showScrewWizard)}
+                    className="px-3 py-1.5 bg-gradient-to-r from-sky-600 to-teal-600 hover:from-sky-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span>🔩</span>
+                    <span>{showScrewWizard ? 'Schrauben-Assistent schließen' : 'Schraubensatz konfigurieren (M12-M24 & Flanschmaße)'}</span>
+                  </button>
+                </div>
+
+                {showScrewWizard && (
+                  <div className="my-2">
+                    <ScrewConfigurator
+                      defaultCategory={matCategory === 'VA Schrauben' ? 'VA Schrauben' : 'Verzinkte Schrauben'}
+                      onSelectScrew={(screw) => {
+                        setCustomMatName(screw.name);
+                        setMatCategory(screw.category);
+                        setMatUnit('Stk.');
+                        setMatOnSite(screw.quantity);
+                        setMatNotes(screw.notes || '');
+                        setSelectedCatalogId('');
+                        setShowScrewWizard(false);
+                      }}
+                    />
                   </div>
                 )}
 
