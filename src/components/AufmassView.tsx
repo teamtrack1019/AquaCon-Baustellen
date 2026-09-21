@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { AufmassSheet, AufmassItem, MaterialCategory, MaterialUnit } from '../types';
 import { generateAufmassPdf, shareAufmassPdf } from '../utils/pdfGenerator';
-import { findMatchingFlange } from '../utils/flangeHelper';
+import { findMatchingFlange, getMatchingScrewsForFlange } from '../utils/flangeHelper';
 
 interface AufmassViewProps {
   initialBaustelleId?: string | null;
@@ -242,7 +242,7 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
 
     const newEntries: AufmassItem[] = [newItem];
 
-    // Check if it is a Vorschweißbund or Bundbuchse to auto-add matching Losflansch
+    // Check if it is a Vorschweißbund or Bundbuchse to auto-add matching Losflansch & Schrauben
     const flangeCheck = findMatchingFlange(selectedCatalogItem.name, selectedCatalogItem.category, catalog);
     if (flangeCheck.matchingFlange) {
       const flangeQty = quantity > 0 ? quantity : 1;
@@ -261,7 +261,60 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
       newEntries.push(flangeItem);
     }
 
-    setSheetItems(prev => [...prev, ...newEntries]);
+    // Auto-add matching Schraubensatz
+    const screwCheck = getMatchingScrewsForFlange(selectedCatalogItem.name, catalog);
+    if (screwCheck) {
+      const baseQty = quantity > 0 ? quantity : 1;
+      const screwQty = screwCheck.countPerFlange * baseQty;
+      const screwCat: MaterialCategory = selectedCatalogItem.category === 'VA Schrauben' ? 'VA Schrauben' : 'Verzinkte Schrauben';
+      const screwName = screwCat === 'VA Schrauben' ? screwCheck.recommendedNameVa : screwCheck.recommendedNameVz;
+      const screwItem: AufmassItem = {
+        id: `item-${Date.now() + 2}-${Math.random().toString(36).substr(2, 4)}`,
+        name: screwName,
+        category: screwCat,
+        unit: 'Stk.',
+        quantity: screwQty,
+        segments: [],
+        total: screwQty,
+        notes: `für ${selectedCatalogItem.name}`
+      };
+      newEntries.push(screwItem);
+    }
+
+    setSheetItems(prev => {
+      let updated = [...prev];
+      for (const entry of newEntries) {
+        const existingIdx = updated.findIndex(item => {
+          if (entry.catalogItemId && item.catalogItemId && entry.catalogItemId === item.catalogItemId) {
+            return true;
+          }
+          return item.name.trim().toLowerCase() === entry.name.trim().toLowerCase() && item.unit === entry.unit;
+        });
+
+        if (existingIdx >= 0) {
+          const target = updated[existingIdx];
+          if (entry.segments && entry.segments.length > 0) {
+            const mergedSegments = [...target.segments, ...entry.segments];
+            const newTotal = Number(mergedSegments.reduce((sum, n) => sum + n, 0).toFixed(2));
+            updated[existingIdx] = {
+              ...target,
+              segments: mergedSegments,
+              total: newTotal
+            };
+          } else {
+            const newQty = (target.quantity || 0) + (entry.quantity || 0);
+            updated[existingIdx] = {
+              ...target,
+              quantity: newQty,
+              total: newQty
+            };
+          }
+        } else {
+          updated.push(entry);
+        }
+      }
+      return updated;
+    });
 
     // Reset inputs
     setSelectedCatalogItem(null);

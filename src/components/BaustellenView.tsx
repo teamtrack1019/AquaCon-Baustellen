@@ -30,7 +30,7 @@ import { AreaType, MaterialCategory, MaterialUnit, Area, Baustelle, Order } from
 import { generateAreaMaterialPdf, shareAreaMaterialPdf } from '../utils/pdfGenerator';
 import { DeliveryCheckModal } from './DeliveryCheckModal';
 import { ScrewConfigurator } from './ScrewConfigurator';
-import { findMatchingFlange } from '../utils/flangeHelper';
+import { findMatchingFlange, getMatchingScrewsForFlange } from '../utils/flangeHelper';
 
 interface BaustellenViewProps {
   selectedBaustelleId: string | null;
@@ -229,7 +229,25 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
         unit: flangeCheck.matchingFlange.unit,
         requiredQty: totalRequired,
         onSiteQty: onSite,
-        notes: matNotes.trim() || undefined
+        notes: matNotes.trim() ? `${matNotes.trim()} (Flansch)` : undefined
+      });
+    }
+
+    // Auto-add matching Schraubensatz
+    const screwCheck = getMatchingScrewsForFlange(finalName, catalog);
+    if (screwCheck) {
+      const screwCat: MaterialCategory = matCategory === 'VA Schrauben' ? 'VA Schrauben' : 'Verzinkte Schrauben';
+      const screwName = screwCat === 'VA Schrauben' ? screwCheck.recommendedNameVa : screwCheck.recommendedNameVz;
+      const screwRequired = screwCheck.countPerFlange * totalRequired;
+      const screwOnSite = screwCheck.countPerFlange * onSite;
+
+      addMaterialToArea(activeBaustelle.id, currentArea.id, {
+        name: screwName,
+        category: screwCat,
+        unit: 'Stk.',
+        requiredQty: screwRequired,
+        onSiteQty: screwOnSite,
+        notes: matNotes.trim() ? `${matNotes.trim()} (für ${finalName})` : `für ${finalName}`
       });
     }
 
@@ -1181,16 +1199,39 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
                 </div>
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Notiz / Verwendungsort</label>
-                <input
-                  type="text"
-                  value={matNotes}
-                  onChange={e => setMatNotes(e.target.value)}
-                  placeholder="z. B. Für Bodeneinströmung 1. Bauabschnitt"
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
-                />
-              </div>
+              {/* Auto Flange & Schrauben Preview */}
+              {(() => {
+                const currentName = customMatName.trim();
+                if (!currentName) return null;
+                const flangeCheck = findMatchingFlange(currentName, matCategory, catalog);
+                const screwCheck = getMatchingScrewsForFlange(currentName, catalog);
+                if (!flangeCheck.matchingFlange && !screwCheck) return null;
+
+                const onSite = Number(matOnSite) || 0;
+                const zusatz = Number(matZusatz) || 0;
+                const totalReq = onSite + zusatz;
+
+                return (
+                  <div className="space-y-1.5 bg-gradient-to-r from-sky-50 to-amber-50 p-3 rounded-xl border border-sky-200">
+                    <div className="text-[11px] font-bold text-sky-900 flex items-center gap-1.5">
+                      <span>⚡</span>
+                      <span>Automatisch mit-erfasste Flansch-Komponenten:</span>
+                    </div>
+                    {flangeCheck.matchingFlange && (
+                      <div className="text-[11px] text-slate-700 flex items-center justify-between pl-4">
+                        <span>• <strong>{flangeCheck.matchingFlange.name}</strong></span>
+                        <span className="font-mono font-bold text-sky-700">{totalReq} Stk.</span>
+                      </div>
+                    )}
+                    {screwCheck && (
+                      <div className="text-[11px] text-slate-700 flex items-center justify-between pl-4">
+                        <span>• <strong>{matCategory === 'VA Schrauben' ? screwCheck.recommendedNameVa : screwCheck.recommendedNameVz}</strong></span>
+                        <span className="font-mono font-bold text-sky-700">{screwCheck.countPerFlange * (totalReq || 1)} Stk.</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </form>
 
             {/* Permanent Fixed Footer (Always visible above everything!) */}

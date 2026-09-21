@@ -59,8 +59,35 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
   const [freeUnit, setFreeUnit] = useState<MaterialUnit>('Stk.');
   const [freeQty, setFreeQty] = useState<string | number>(1);
   const [showScrewWizard, setShowScrewWizard] = useState(false);
+  const [screwPreference, setScrewPreference] = useState<'vz' | 'va' | 'none'>('vz');
 
   const currentBaustelle = baustellen.find(b => b.id === selectedBaustelleId);
+
+  // Helper to merge order items without creating duplicate rows
+  const mergeOrderItems = (existing: Omit<OrderItem, 'id'>[], newEntries: Omit<OrderItem, 'id'>[]) => {
+    let updated = [...existing];
+    for (const entry of newEntries) {
+      const existingIdx = updated.findIndex(item => {
+        if (entry.catalogItemId && item.catalogItemId && entry.catalogItemId === item.catalogItemId) {
+          return true;
+        }
+        return item.name.trim().toLowerCase() === entry.name.trim().toLowerCase() && item.unit === entry.unit;
+      });
+
+      if (existingIdx >= 0) {
+        const target = updated[existingIdx];
+        const newOrderedQty = (target.orderedQty || 0) + (entry.orderedQty || 0);
+        updated[existingIdx] = {
+          ...target,
+          orderedQty: newOrderedQty,
+          flaggedMissingQty: newOrderedQty
+        };
+      } else {
+        updated.push(entry);
+      }
+    }
+    return updated;
+  };
 
   // Initialize with prefilled shortages if requested
   useEffect(() => {
@@ -92,7 +119,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
       status: 'pending'
     }));
 
-    setItems(newItems);
+    setItems(prev => mergeOrderItems(prev, newItems));
   };
 
   const handleAddCatalogItem = () => {
@@ -129,7 +156,30 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
       });
     }
 
-    setItems(prev => [...prev, ...newEntries]);
+    // Auto-add matching Schraubensatz
+    if (screwPreference !== 'none') {
+      const screwCheck = getMatchingScrewsForFlange(selectedCatalogItem.name, catalog);
+      if (screwCheck) {
+        const screwCat: MaterialCategory = screwPreference === 'va' ? 'VA Schrauben' : 'Verzinkte Schrauben';
+        const screwName = screwPreference === 'va' ? screwCheck.recommendedNameVa : screwCheck.recommendedNameVz;
+        const screwCatItem = screwPreference === 'va' ? screwCheck.matchingCatalogItemVa : screwCheck.matchingCatalogItemVz;
+        const screwCount = screwCheck.countPerFlange * qty;
+
+        newEntries.push({
+          catalogItemId: screwCatItem?.id,
+          name: screwName,
+          category: screwCat,
+          unit: 'Stk.',
+          orderedQty: screwCount,
+          deliveredQty: 0,
+          flaggedMissingQty: screwCount,
+          isFlagged: false,
+          status: 'pending'
+        });
+      }
+    }
+
+    setItems(prev => mergeOrderItems(prev, newEntries));
 
     setSelectedCatalogItem(null);
     setPickQty(1);
@@ -138,20 +188,18 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
 
   const handleAddDirectScrew = (name: string, category: MaterialCategory, qty: number) => {
     const catItem = catalog.find(c => c.name.toLowerCase() === name.toLowerCase());
-    setItems(prev => [
-      ...prev,
-      {
-        catalogItemId: catItem?.id,
-        name: catItem?.name || name,
-        category,
-        unit: 'Stk.',
-        orderedQty: qty,
-        deliveredQty: 0,
-        flaggedMissingQty: qty,
-        isFlagged: false,
-        status: 'pending'
-      }
-    ]);
+    const newEntry: Omit<OrderItem, 'id'> = {
+      catalogItemId: catItem?.id,
+      name: catItem?.name || name,
+      category,
+      unit: 'Stk.',
+      orderedQty: qty,
+      deliveredQty: 0,
+      flaggedMissingQty: qty,
+      isFlagged: false,
+      status: 'pending'
+    };
+    setItems(prev => mergeOrderItems(prev, [newEntry]));
   };
 
   const handleAddFreeItem = () => {
@@ -186,7 +234,30 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
       });
     }
 
-    setItems(prev => [...prev, ...newEntries]);
+    // Check matching Schraubensatz
+    if (screwPreference !== 'none') {
+      const screwCheck = getMatchingScrewsForFlange(freeName.trim(), catalog);
+      if (screwCheck) {
+        const screwCat: MaterialCategory = screwPreference === 'va' ? 'VA Schrauben' : 'Verzinkte Schrauben';
+        const screwName = screwPreference === 'va' ? screwCheck.recommendedNameVa : screwCheck.recommendedNameVz;
+        const screwCatItem = screwPreference === 'va' ? screwCheck.matchingCatalogItemVa : screwCheck.matchingCatalogItemVz;
+        const screwCount = screwCheck.countPerFlange * qty;
+
+        newEntries.push({
+          catalogItemId: screwCatItem?.id,
+          name: screwName,
+          category: screwCat,
+          unit: 'Stk.',
+          orderedQty: screwCount,
+          deliveredQty: 0,
+          flaggedMissingQty: screwCount,
+          isFlagged: false,
+          status: 'pending'
+        });
+      }
+    }
+
+    setItems(prev => mergeOrderItems(prev, newEntries));
 
     setFreeName('');
     setFreeQty(1);
@@ -486,36 +557,63 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
               if (!flangeCheck.matchingFlange && !screwCheck) return null;
 
               return (
-                <div className="space-y-1.5">
+                <div className="space-y-2 bg-gradient-to-r from-sky-50 to-amber-50 p-3 rounded-xl border border-sky-200">
+                  <div className="text-[11px] font-bold text-sky-950 flex items-center gap-1.5">
+                    <span>⚡</span>
+                    <span>Wird beim Klick auf "+ Einfügen" automatisch mitbestellt:</span>
+                  </div>
+
                   {flangeCheck.matchingFlange && (
-                    <div className="bg-amber-100/90 border border-amber-300 rounded-xl px-3 py-2 text-[11px] flex items-center gap-2 text-amber-900 font-medium">
-                      <span className="text-base">⚡</span>
-                      <span><strong>Automatischer Losflansch:</strong> {flangeCheck.matchingFlange.name} ({qty} Stk.) wird automatisch mitbestellt.</span>
+                    <div className="bg-amber-100/90 border border-amber-300 rounded-lg px-2.5 py-1.5 text-[11px] flex items-center justify-between text-amber-900 font-medium">
+                      <span>• <strong>Losflansch:</strong> {flangeCheck.matchingFlange.name}</span>
+                      <span className="font-mono font-bold">{qty} Stk.</span>
                     </div>
                   )}
 
                   {screwCheck && (
-                    <div className="bg-sky-100/90 border border-sky-300 rounded-xl px-3 py-2 text-[11px] text-sky-950 font-medium flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-base">🔩</span>
-                        <span>
-                          <strong>Passender Schraubensatz:</strong> {screwCheck.countPerFlange * qty}x {screwCheck.metric} x {screwCheck.length} mm (für {qty} Flansch{qty > 1 ? 'e' : ''})
+                    <div className="bg-sky-100/90 border border-sky-300 rounded-lg px-2.5 py-1.5 text-[11px] text-sky-950">
+                      <div className="flex items-center justify-between font-medium mb-1">
+                        <span className="flex items-center gap-1">
+                          <span>🔩</span>
+                          <span><strong>Passender Schraubensatz:</strong> {screwCheck.countPerFlange * qty}x {screwCheck.metric} x {screwCheck.length} mm</span>
                         </span>
+                        <span className="font-mono font-bold">{screwCheck.countPerFlange * qty} Stk.</span>
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
+
+                      <div className="flex items-center gap-1.5 pt-1 border-t border-sky-200">
+                        <span className="text-[10px] text-slate-500 font-semibold">Material:</span>
                         <button
                           type="button"
-                          onClick={() => handleAddDirectScrew(screwCheck.recommendedNameVz, 'Verzinkte Schrauben', screwCheck.countPerFlange * qty)}
-                          className="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-bold text-[10px] shadow-xs transition"
+                          onClick={() => setScrewPreference('vz')}
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold transition ${
+                            screwPreference === 'vz'
+                              ? 'bg-sky-600 text-white shadow-xs'
+                              : 'bg-white text-slate-700 hover:bg-sky-50 border border-slate-200'
+                          }`}
                         >
-                          + {screwCheck.countPerFlange * qty}x Verzinkt
+                          ✓ Verzinkt (8.8)
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleAddDirectScrew(screwCheck.recommendedNameVa, 'VA Schrauben', screwCheck.countPerFlange * qty)}
-                          className="px-2.5 py-1 bg-teal-600 hover:bg-teal-500 text-white rounded-lg font-bold text-[10px] shadow-xs transition"
+                          onClick={() => setScrewPreference('va')}
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold transition ${
+                            screwPreference === 'va'
+                              ? 'bg-teal-600 text-white shadow-xs'
+                              : 'bg-white text-slate-700 hover:bg-teal-50 border border-slate-200'
+                          }`}
                         >
-                          + {screwCheck.countPerFlange * qty}x VA (Edelstahl)
+                          ✓ VA (Edelstahl)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setScrewPreference('none')}
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold transition ${
+                            screwPreference === 'none'
+                              ? 'bg-slate-700 text-white shadow-xs'
+                              : 'bg-white text-slate-500 hover:bg-slate-100 border border-slate-200'
+                          }`}
+                        >
+                          Keine Schrauben
                         </button>
                       </div>
                     </div>

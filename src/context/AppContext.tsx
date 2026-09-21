@@ -585,18 +585,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       notes?: string;
     }
   ) => {
-    const newMat: AreaMaterial = {
-      ...matData,
-      id: `mat-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      lastUpdated: new Date().toISOString().split('T')[0]
-    };
-
     setBaustellen(prev => prev.map(b => {
       if (b.id === baustelleId) {
         return {
           ...b,
           areas: b.areas.map(a => {
             if (a.id === areaId) {
+              const existingIdx = a.materials.findIndex(m => {
+                if (matData.catalogItemId && m.catalogItemId && m.catalogItemId === matData.catalogItemId) {
+                  return true;
+                }
+                return m.name.trim().toLowerCase() === matData.name.trim().toLowerCase() && m.unit === matData.unit;
+              });
+
+              if (existingIdx >= 0) {
+                const updatedMaterials = [...a.materials];
+                const existing = updatedMaterials[existingIdx];
+                updatedMaterials[existingIdx] = {
+                  ...existing,
+                  requiredQty: (existing.requiredQty || 0) + (matData.requiredQty || 0),
+                  onSiteQty: (existing.onSiteQty || 0) + (matData.onSiteQty || 0),
+                  notes: matData.notes
+                    ? (existing.notes && !existing.notes.includes(matData.notes)
+                        ? `${existing.notes} | ${matData.notes}`
+                        : existing.notes || matData.notes)
+                    : existing.notes,
+                  lastUpdated: new Date().toISOString().split('T')[0]
+                };
+                return {
+                  ...a,
+                  materials: updatedMaterials
+                };
+              }
+
+              const newMat: AreaMaterial = {
+                ...matData,
+                id: `mat-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+                lastUpdated: new Date().toISOString().split('T')[0]
+              };
               return {
                 ...a,
                 materials: [...a.materials, newMat]
