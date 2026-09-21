@@ -431,14 +431,14 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
               const newBId = e.target.value;
               setSelectedBaustelleId(newBId);
               setSelectedAreaId('all');
-              if (!currentSheetId) {
-                const targetB = baustellen.find(b => b.id === newBId);
-                setSheetTitle(targetB ? `Aufmaß ${targetB.name}` : '');
-                if (role === 'admin') {
-                  setInspectorName('Admin');
-                } else if (activeWorker) {
-                  setInspectorName(activeWorker.name);
-                }
+              const targetB = baustellen.find(b => b.id === newBId);
+              if (targetB) {
+                setSheetTitle(`Aufmaß ${targetB.name}`);
+              }
+              if (role === 'admin') {
+                setInspectorName('Admin');
+              } else if (activeWorker) {
+                setInspectorName(activeWorker.name);
               }
             }}
             className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none"
@@ -461,10 +461,12 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
             onChange={e => {
               const newAId = e.target.value;
               setSelectedAreaId(newAId);
-              if (!currentSheetId) {
-                const targetB = baustellen.find(b => b.id === selectedBaustelleId);
-                const targetA = targetB?.areas.find(a => a.id === newAId);
-                setSheetTitle(targetA ? `Aufmaß ${targetA.name}` : `Aufmaß ${targetB ? targetB.name : ''}`);
+              const targetB = baustellen.find(b => b.id === selectedBaustelleId);
+              const targetA = targetB?.areas.find(a => a.id === newAId);
+              if (targetA) {
+                setSheetTitle(`Aufmaß ${targetA.name}`);
+              } else if (targetB) {
+                setSheetTitle(`Aufmaß ${targetB.name}`);
               }
             }}
             className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none"
