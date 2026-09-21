@@ -21,7 +21,7 @@ import {
   Layers2,
   X
 } from 'lucide-react';
-import { AufmassSheet, AufmassItem, MaterialCategory, MaterialUnit } from '../types';
+import { AufmassSheet, AufmassItem, MaterialCategory, MaterialUnit, PipeSystemType } from '../types';
 import { generateAufmassPdf, shareAufmassPdf } from '../utils/pdfGenerator';
 import {
   findMatchingFlange,
@@ -55,16 +55,18 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
   );
   const [selectedAreaId, setSelectedAreaId] = useState<string>('all');
   const [inspectorFilter, setInspectorFilter] = useState<string>('all');
+  const [pipeSystemFilter, setPipeSystemFilter] = useState<string>('all');
 
   // Mode: 'list' or 'edit'
   const [mode, setMode] = useState<'list' | 'edit'>('list');
 
   // Currently editing Aufmass Sheet
   const [currentSheetId, setCurrentSheetId] = useState<string | null>(null);
+  const [selectedPipeSystem, setSelectedPipeSystem] = useState<PipeSystemType | string>('Reinwasserleitung');
   const [sheetTitle, setSheetTitle] = useState<string>(() => {
     const initBId = initialBaustelleId || (baustellen.length > 0 ? baustellen[0].id : '');
     const b = baustellen.find(item => item.id === initBId);
-    return b ? `Aufmaß ${b.name}` : '';
+    return b ? `Aufmaß ${b.name} - Reinwasserleitung` : 'Aufmaß - Reinwasserleitung';
   });
   const [sheetDate, setSheetDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [inspectorName, setInspectorName] = useState<string>(() => {
@@ -79,10 +81,10 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
       setSelectedBaustelleId(initialBaustelleId);
       if (!currentSheetId) {
         const b = baustellen.find(item => item.id === initialBaustelleId);
-        if (b) setSheetTitle(`Aufmaß ${b.name}`);
+        if (b) setSheetTitle(`Aufmaß ${b.name} - ${selectedPipeSystem}`);
       }
     }
-  }, [initialBaustelleId, currentSheetId, baustellen, selectedBaustelleId]);
+  }, [initialBaustelleId, currentSheetId, baustellen, selectedBaustelleId, selectedPipeSystem]);
 
   // Catalog picker in editor
   const [searchTerm, setSearchTerm] = useState('');
@@ -111,6 +113,10 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
     return aufmassSheets.filter(s => {
       if (selectedBaustelleId && s.baustelleId !== selectedBaustelleId) return false;
       if (selectedAreaId && selectedAreaId !== 'all' && s.areaId !== selectedAreaId) return false;
+      if (pipeSystemFilter !== 'all') {
+        const sys = s.pipeSystem || (s.title.toLowerCase().includes('schwallwasser') ? 'Schwallwasserleitung' : s.title.toLowerCase().includes('messwasser') ? 'Messwasserleitung' : 'Reinwasserleitung');
+        if (sys !== pipeSystemFilter) return false;
+      }
       if (inspectorFilter !== 'all') {
         const insp = (s.inspectorName || '').toLowerCase();
         if (inspectorFilter === 'admin') {
@@ -121,7 +127,7 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
       }
       return true;
     });
-  }, [aufmassSheets, selectedBaustelleId, selectedAreaId, inspectorFilter]);
+  }, [aufmassSheets, selectedBaustelleId, selectedAreaId, pipeSystemFilter, inspectorFilter]);
 
   // Categories list
   const categories: MaterialCategory[] = [
@@ -180,7 +186,10 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
     const b = currentBaustelle;
     const a = b?.areas.find(ar => ar.id === selectedAreaId);
     setCurrentSheetId(null);
-    setSheetTitle(a ? `Aufmaß ${a.name}` : `Aufmaß ${b ? b.name : ''}`);
+    const pipe = selectedPipeSystem || 'Reinwasserleitung';
+    setSelectedPipeSystem(pipe);
+    const targetName = a ? a.name : (b ? b.name : '');
+    setSheetTitle(targetName ? `Aufmaß ${targetName} - ${pipe}` : `Aufmaß - ${pipe}`);
     setSheetDate(new Date().toISOString().split('T')[0]);
     const defaultInspector = role === 'admin' ? 'Admin' : (activeWorker?.name || 'Mitarbeiter');
     setInspectorName(defaultInspector);
@@ -198,6 +207,8 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
     setCurrentSheetId(sheet.id);
     setSelectedBaustelleId(sheet.baustelleId);
     if (sheet.areaId) setSelectedAreaId(sheet.areaId);
+    const sys = sheet.pipeSystem || (sheet.title.toLowerCase().includes('schwallwasser') ? 'Schwallwasserleitung' : sheet.title.toLowerCase().includes('messwasser') ? 'Messwasserleitung' : 'Reinwasserleitung');
+    setSelectedPipeSystem(sys);
     setSheetTitle(sheet.title);
     setSheetDate(sheet.date);
     setInspectorName(sheet.inspectorName || '');
@@ -220,12 +231,6 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
 
     if (selectedCatalogItem.unit === 'meter') {
       segments = parseSegments(pipeSegmentsInput);
-      if (segments.length === 0 && pipeSegmentsInput.trim()) {
-        const singleVal = parseFloat(pipeSegmentsInput.replace(/,/g, '.'));
-        if (!isNaN(singleVal) && singleVal > 0) {
-          segments = [singleVal];
-        }
-      }
       total = segments.reduce((a, b) => a + b, 0);
       if (total <= 0) {
         total = 1.0;
@@ -401,6 +406,7 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
       baustelleName: b ? b.name : 'Unbekannt',
       areaId: selectedAreaId !== 'all' ? selectedAreaId : undefined,
       areaName: a ? a.name : undefined,
+      pipeSystem: selectedPipeSystem || 'Reinwasserleitung',
       title: sheetTitle.trim() || 'Aufmaß',
       date: sheetDate || new Date().toISOString().split('T')[0],
       inspectorName: inspectorName.trim() || undefined,
@@ -410,6 +416,65 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
 
     saveAufmassSheet(sheetData);
     setMode('list');
+  };
+
+  // Helper for pipe system badge
+  const renderPipeBadge = (sheet: AufmassSheet) => {
+    const sys = sheet.pipeSystem || (sheet.title.toLowerCase().includes('schwallwasser') ? 'Schwallwasserleitung' : sheet.title.toLowerCase().includes('messwasser') ? 'Messwasserleitung' : 'Reinwasserleitung');
+    if (sys === 'Reinwasserleitung') {
+      return (
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30 flex items-center gap-1">
+          <span>💧</span>
+          <span>Reinwasser</span>
+        </span>
+      );
+    }
+    if (sys === 'Schwallwasserleitung') {
+      return (
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center gap-1">
+          <span>🌊</span>
+          <span>Schwallwasser</span>
+        </span>
+      );
+    }
+    if (sys === 'Messwasserleitung') {
+      return (
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+          <span>🧪</span>
+          <span>Messwasser</span>
+        </span>
+      );
+    }
+    if (sys === 'Rohwasserleitung') {
+      return (
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+          <span>🚰</span>
+          <span>Rohwasser</span>
+        </span>
+      );
+    }
+    if (sys === 'Attraktionsleitung') {
+      return (
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-1">
+          <span>🌀</span>
+          <span>Attraktion</span>
+        </span>
+      );
+    }
+    if (sys === 'Spülwasserleitung') {
+      return (
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center gap-1">
+          <span>🔄</span>
+          <span>Spülwasser</span>
+        </span>
+      );
+    }
+    return (
+      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-700/60 text-slate-300 border border-slate-600 flex items-center gap-1">
+        <span>⚙️</span>
+        <span>{sys}</span>
+      </span>
+    );
   };
 
   // Delete sheet
@@ -495,8 +560,8 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
         </div>
       </div>
 
-      {/* Baustelle & Bereich Filter Bar */}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 ${mode === 'list' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3 bg-slate-850 p-4 rounded-xl border border-slate-800 shadow-md`}>
+      {/* Baustelle, Bereich & Leitungssystem Filter Bar */}
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${mode === 'list' ? 'lg:grid-cols-5' : 'lg:grid-cols-3'} gap-3 bg-slate-850 p-4 rounded-xl border border-slate-800 shadow-md`}>
         <div>
           <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
             <Building2 className="w-3.5 h-3.5 text-sky-400" />
@@ -510,7 +575,7 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
               setSelectedAreaId('all');
               const targetB = baustellen.find(b => b.id === newBId);
               if (targetB) {
-                setSheetTitle(`Aufmaß ${targetB.name}`);
+                setSheetTitle(`Aufmaß ${targetB.name} - ${selectedPipeSystem}`);
               }
               if (role === 'admin') {
                 setInspectorName('Admin');
@@ -541,9 +606,9 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
               const targetB = baustellen.find(b => b.id === selectedBaustelleId);
               const targetA = targetB?.areas.find(a => a.id === newAId);
               if (targetA) {
-                setSheetTitle(`Aufmaß ${targetA.name}`);
+                setSheetTitle(`Aufmaß ${targetA.name} - ${selectedPipeSystem}`);
               } else if (targetB) {
-                setSheetTitle(`Aufmaß ${targetB.name}`);
+                setSheetTitle(`Aufmaß ${targetB.name} - ${selectedPipeSystem}`);
               }
             }}
             className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none"
@@ -556,6 +621,29 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
             ))}
           </select>
         </div>
+
+        {mode === 'list' && (
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <Layers2 className="w-3.5 h-3.5 text-cyan-400" />
+              Leitungssystem
+            </label>
+            <select
+              value={pipeSystemFilter}
+              onChange={e => setPipeSystemFilter(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none font-medium"
+            >
+              <option value="all">Alle Leitungssysteme</option>
+              <option value="Reinwasserleitung">💧 Reinwasserleitung</option>
+              <option value="Schwallwasserleitung">🌊 Schwallwasserleitung</option>
+              <option value="Messwasserleitung">🧪 Messwasserleitung</option>
+              <option value="Rohwasserleitung">🚰 Rohwasserleitung</option>
+              <option value="Attraktionsleitung">🌀 Attraktionsleitung</option>
+              <option value="Spülwasserleitung">🔄 Spülwasserleitung</option>
+              <option value="Sonstiges">⚙️ Sonstige Leitung</option>
+            </select>
+          </div>
+        )}
 
         {mode === 'list' && (
           <div>
@@ -630,12 +718,15 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
                     className="bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 hover:border-teal-500/50 rounded-2xl p-5 shadow-lg transition-all cursor-pointer group flex flex-col justify-between"
                   >
                     <div>
-                      <div className="flex items-start justify-between gap-2 mb-3">
-                        <div>
-                          <span className="text-[11px] font-semibold uppercase tracking-wider text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded-md border border-teal-500/20">
-                            {sheet.areaName || 'Gesamte Baustelle'}
-                          </span>
-                          <h3 className="text-base font-bold text-white group-hover:text-teal-300 transition mt-1.5">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[11px] font-semibold uppercase tracking-wider text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded-md border border-teal-500/20">
+                              {sheet.areaName || 'Gesamte Baustelle'}
+                            </span>
+                            {renderPipeBadge(sheet)}
+                          </div>
+                          <h3 className="text-base font-bold text-white group-hover:text-teal-300 transition">
                             {sheet.title}
                           </h3>
                         </div>
@@ -741,11 +832,59 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
       {mode === 'edit' && (
         <div className="space-y-6">
           {/* Sheet Header Metadata Inputs */}
-          <div className="bg-slate-850 border border-slate-700/80 rounded-2xl p-5 shadow-xl">
-            <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+          <div className="bg-slate-850 border border-slate-700/80 rounded-2xl p-5 shadow-xl space-y-4">
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
               <FileText className="w-5 h-5 text-teal-400" />
               Aufmaßblatt Stammdaten
             </h2>
+
+            {/* Quick Pipe System Pills */}
+            <div className="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/60 space-y-2">
+              <label className="block text-xs font-semibold text-slate-300 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Layers2 className="w-3.5 h-3.5 text-sky-400" />
+                  <span>Leitungssystem / Leitungsart (Gewerk) *</span>
+                </span>
+                <span className="text-[11px] text-teal-400 font-normal">
+                  Trennt Reinwasser-, Schwallwasser- & Messwasserleitungen
+                </span>
+              </label>
+
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                {[
+                  { id: 'Reinwasserleitung', label: 'Reinwasserleitung', icon: '💧' },
+                  { id: 'Schwallwasserleitung', label: 'Schwallwasserleitung', icon: '🌊' },
+                  { id: 'Messwasserleitung', label: 'Messwasserleitung', icon: '🧪' },
+                  { id: 'Rohwasserleitung', label: 'Rohwasserleitung', icon: '🚰' },
+                  { id: 'Attraktionsleitung', label: 'Attraktionsleitung', icon: '🌀' },
+                  { id: 'Spülwasserleitung', label: 'Spülwasserleitung', icon: '🔄' },
+                  { id: 'Sonstiges', label: 'Sonstige Leitung', icon: '⚙️' }
+                ].map(sys => {
+                  const isSelected = selectedPipeSystem === sys.id;
+                  return (
+                    <button
+                      key={sys.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedPipeSystem(sys.id);
+                        const b = baustellen.find(x => x.id === selectedBaustelleId);
+                        const a = b?.areas.find(x => x.id === selectedAreaId);
+                        const targetName = a ? a.name : (b ? b.name : '');
+                        setSheetTitle(targetName ? `Aufmaß ${targetName} - ${sys.label}` : `Aufmaß - ${sys.label}`);
+                      }}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        isSelected
+                          ? 'bg-teal-500 text-slate-950 shadow-md scale-102 ring-2 ring-teal-400/50'
+                          : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 border border-slate-700'
+                      }`}
+                    >
+                      <span>{sys.icon}</span>
+                      <span>{sys.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
               <div className="bg-slate-900/60 p-3 sm:p-3.5 rounded-xl border border-slate-700/60 flex flex-col justify-between">
@@ -757,8 +896,8 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
                   type="text"
                   value={sheetTitle}
                   onChange={e => setSheetTitle(e.target.value)}
-                  placeholder="z. B. Beckenumgang Verrohrung"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                  placeholder="z. B. Schwimmerbecken - Reinwasserleitung"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none font-medium"
                 />
               </div>
 
@@ -771,7 +910,7 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
                   type="date"
                   value={sheetDate}
                   onChange={e => setSheetDate(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none block"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none block font-medium"
                 />
               </div>
 

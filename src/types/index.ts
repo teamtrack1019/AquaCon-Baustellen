@@ -159,12 +159,22 @@ export interface AufmassItem {
   notes?: string;
 }
 
+export type PipeSystemType =
+  | 'Reinwasserleitung'
+  | 'Schwallwasserleitung'
+  | 'Messwasserleitung'
+  | 'Rohwasserleitung'
+  | 'Attraktionsleitung'
+  | 'Spülwasserleitung'
+  | 'Sonstiges';
+
 export interface AufmassSheet {
   id: string;
   baustelleId: string;
   baustelleName: string;
   areaId?: string;
   areaName?: string;
+  pipeSystem?: PipeSystemType | string;
   title: string;
   date: string;
   inspectorName?: string;

@@ -247,16 +247,19 @@ export const createAufmassPdfDoc = (sheet: import('../types').AufmassSheet) => {
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
 
+  const pipeSysDisplay = sheet.pipeSystem || (sheet.title.toLowerCase().includes('schwallwasser') ? 'Schwallwasserleitung' : sheet.title.toLowerCase().includes('messwasser') ? 'Messwasserleitung' : 'Reinwasserleitung');
+
   doc.text(`Baustelle / Projekt: ${sheet.baustelleName}`, 14, 38);
   doc.text(`Bereich / Becken: ${sheet.areaName || 'Gesamtes Objekt'}`, 14, 44);
-  doc.text(`Aufmaß-Titel: ${sheet.title || 'Aufmaß'}`, 14, 50);
+  doc.text(`Leitungssystem: ${pipeSysDisplay}`, 14, 50);
+  doc.text(`Aufmaß-Titel: ${sheet.title || 'Aufmaß'}`, 14, 56);
 
   doc.text(`Datum: ${sheet.date || new Date(sheet.createdAt).toLocaleDateString('de-DE')}`, 130, 38);
   doc.text(`Erfasst durch: ${sheet.inspectorName || 'Baustelle / Monteur'}`, 130, 44);
 
   // Divider
   doc.setDrawColor(203, 213, 225);
-  doc.line(14, 56, 196, 56);
+  doc.line(14, 61, 196, 61);
 
   // Items Table
   const pad3 = (num: number): string => num.toString().padStart(3, '0');
@@ -295,7 +298,7 @@ export const createAufmassPdfDoc = (sheet: import('../types').AufmassSheet) => {
   });
 
   autoTable(doc, {
-    startY: 62,
+    startY: 66,
     head: [['OZ', 'Materialbezeichnung', 'Einh.', 'Einzelmaße / Aufmaßkette', 'Gesamt']],
     body: tableData,
     theme: 'grid',
