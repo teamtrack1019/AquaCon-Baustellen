@@ -53,11 +53,25 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
 
   // Currently editing Aufmass Sheet
   const [currentSheetId, setCurrentSheetId] = useState<string | null>(null);
-  const [sheetTitle, setSheetTitle] = useState<string>('');
+  const [sheetTitle, setSheetTitle] = useState<string>(() => {
+    const initBId = initialBaustelleId || (baustellen.length > 0 ? baustellen[0].id : '');
+    const b = baustellen.find(item => item.id === initBId);
+    return b ? `Aufmaß ${b.name}` : '';
+  });
   const [sheetDate, setSheetDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [inspectorName, setInspectorName] = useState<string>('');
   const [sheetNotes, setSheetNotes] = useState<string>('');
   const [sheetItems, setSheetItems] = useState<AufmassItem[]>([]);
+
+  React.useEffect(() => {
+    if (initialBaustelleId && initialBaustelleId !== selectedBaustelleId) {
+      setSelectedBaustelleId(initialBaustelleId);
+      if (!currentSheetId) {
+        const b = baustellen.find(item => item.id === initialBaustelleId);
+        if (b) setSheetTitle(`Aufmaß ${b.name}`);
+      }
+    }
+  }, [initialBaustelleId, currentSheetId, baustellen, selectedBaustelleId]);
 
   // Catalog picker in editor
   const [searchTerm, setSearchTerm] = useState('');
@@ -413,8 +427,16 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
           <select
             value={selectedBaustelleId}
             onChange={e => {
-              setSelectedBaustelleId(e.target.value);
+              const newBId = e.target.value;
+              setSelectedBaustelleId(newBId);
               setSelectedAreaId('all');
+              if (!currentSheetId) {
+                const targetB = baustellen.find(b => b.id === newBId);
+                setSheetTitle(targetB ? `Aufmaß ${targetB.name}` : '');
+                if (role === 'admin' && targetB?.manager) {
+                  setInspectorName(`${targetB.manager} (Bauleitung)`);
+                }
+              }
             }}
             className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none"
           >
@@ -433,7 +455,15 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
           </label>
           <select
             value={selectedAreaId}
-            onChange={e => setSelectedAreaId(e.target.value)}
+            onChange={e => {
+              const newAId = e.target.value;
+              setSelectedAreaId(newAId);
+              if (!currentSheetId) {
+                const targetB = baustellen.find(b => b.id === selectedBaustelleId);
+                const targetA = targetB?.areas.find(a => a.id === newAId);
+                setSheetTitle(targetA ? `Aufmaß ${targetA.name}` : `Aufmaß ${targetB ? targetB.name : ''}`);
+              }
+            }}
             className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none"
           >
             <option value="all">Alle Bereiche / Gesamte Baustelle</option>
@@ -633,9 +663,10 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
               Aufmaßblatt Stammdaten
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4">
+              <div className="w-full">
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-teal-400" />
                   Aufmaß Bezeichnung / Titel *
                 </label>
                 <input
@@ -643,27 +674,29 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
                   value={sheetTitle}
                   onChange={e => setSheetTitle(e.target.value)}
                   placeholder="z. B. Beckenumgang Verrohrung"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <div className="w-full">
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-teal-400" />
                   Datum
                 </label>
                 <input
                   type="date"
                   value={sheetDate}
                   onChange={e => setSheetDate(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <div className="w-full">
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-amber-400" />
                   Erfasser / Monteur
                 </label>
-                <div className="flex items-center space-x-1">
+                <div className="space-y-1.5">
                   <select
                     value={
                       inspectorName === 'Admin (Zentrale)' ||
@@ -676,9 +709,11 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
                     onChange={e => {
                       if (e.target.value !== 'custom') {
                         setInspectorName(e.target.value);
+                      } else {
+                        setInspectorName('');
                       }
                     }}
-                    className="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none flex-1 font-medium"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none font-medium"
                   >
                     <option value="Admin (Zentrale)">🛡️ Admin (Zentrale)</option>
                     {currentBaustelle?.manager && (
@@ -689,8 +724,9 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
                     {workers.map(w => (
                       <option key={w.id} value={w.name}>👷 {w.name} ({w.roleTitle || 'Monteur'})</option>
                     ))}
-                    <option value="custom">✍️ Anderer Name...</option>
+                    <option value="custom">✍️ Anderer Name (Manuell)...</option>
                   </select>
+
                   {inspectorName !== 'Admin (Zentrale)' &&
                     inspectorName !== 'Bauleitung' &&
                     (!currentBaustelle?.manager || inspectorName !== `${currentBaustelle.manager} (Bauleitung)`) &&
@@ -699,8 +735,8 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
                         type="text"
                         value={inspectorName}
                         onChange={e => setInspectorName(e.target.value)}
-                        placeholder="Name eingeben"
-                        className="w-32 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                        placeholder="Monteur / Erfasser Name..."
+                        className="w-full bg-slate-900 border border-teal-500/50 rounded-xl px-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
                       />
                     )}
                 </div>
