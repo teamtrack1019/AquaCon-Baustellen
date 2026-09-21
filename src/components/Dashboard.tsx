@@ -347,7 +347,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           key={a.id}
                           className="text-[10px] px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-600 font-medium"
                         >
-                          {a.type === 'schwimmerbecken' ? '🏊' : a.type === 'nichtschwimmerbecken' ? '🏊‍♂️' : a.type === 'planschbecken' ? '👶' : a.type === 'haus' ? '🏠' : '⚙️'} {a.name}
+                          {a.type === 'schwimmerbecken' ? '🏊' : a.type === 'nichtschwimmerbecken' ? '🏊‍♂️' : a.type === 'springerbecken' ? '🤿' : a.type === 'planschbecken' ? '👶' : a.type === 'haus' ? '🏠' : '⚙️'} {a.name}
                         </span>
                       ))}
                     </div>

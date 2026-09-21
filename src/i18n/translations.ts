@@ -40,6 +40,7 @@ const deTranslations = {
   // Area types
   typeSchwimmer: 'Schwimmerbecken',
   typeNichtschwimmer: 'Nichtschwimmerbecken',
+  typeSpringer: 'Springerbecken',
   typePlansch: 'Planschbecken / Kinderbereich',
   typeHaus: 'Gebäude / Außenbereich',
   typeTechnik: 'Technikraum',

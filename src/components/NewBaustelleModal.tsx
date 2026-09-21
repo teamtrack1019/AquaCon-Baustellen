@@ -24,6 +24,7 @@ export const NewBaustelleModal: React.FC<NewBaustelleModalProps> = ({ onClose, o
   // Default areas to automatically create
   const [includeSchwimmer, setIncludeSchwimmer] = useState(true);
   const [includeNichtschwimmer, setIncludeNichtschwimmer] = useState(true);
+  const [includeSpringer, setIncludeSpringer] = useState(true);
   const [includePlansch, setIncludePlansch] = useState(true);
   const [includeTechnikraum, setIncludeTechnikraum] = useState(true);
 
@@ -53,9 +54,19 @@ export const NewBaustelleModal: React.FC<NewBaustelleModalProps> = ({ onClose, o
       });
     }
 
-    if (includePlansch) {
+    if (includeSpringer) {
       initialAreas.push({
         id: `area-${Date.now()}-3`,
+        name: 'Springerbecken',
+        type: 'springerbecken',
+        description: 'Sprungbecken / Sprunganlage',
+        materials: []
+      });
+    }
+
+    if (includePlansch) {
+      initialAreas.push({
+        id: `area-${Date.now()}-4`,
         name: 'Planschbecken / Kinderbereich',
         type: 'planschbecken',
         description: 'Kinder- & Kleinkinderbereich',
@@ -65,7 +76,7 @@ export const NewBaustelleModal: React.FC<NewBaustelleModalProps> = ({ onClose, o
 
     if (includeTechnikraum) {
       initialAreas.push({
-        id: `area-${Date.now()}-4`,
+        id: `area-${Date.now()}-5`,
         name: 'Technikraum',
         type: 'technikraum',
         description: 'Filter- & Pumpentechnik',
@@ -225,6 +236,16 @@ export const NewBaustelleModal: React.FC<NewBaustelleModalProps> = ({ onClose, o
                   className="w-4 h-4 text-sky-600 rounded focus:ring-sky-500"
                 />
                 <span className="font-semibold text-slate-800">🏊‍♂️ Nichtschwimmerbecken</span>
+              </label>
+
+              <label className="flex items-center space-x-2 bg-white p-2.5 rounded-xl border border-sky-200/60 cursor-pointer hover:bg-sky-50/50 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={includeSpringer}
+                  onChange={e => setIncludeSpringer(e.target.checked)}
+                  className="w-4 h-4 text-sky-600 rounded focus:ring-sky-500"
+                />
+                <span className="font-semibold text-slate-800">🤿 Springerbecken</span>
               </label>
 
               <label className="flex items-center space-x-2 bg-white p-2.5 rounded-xl border border-sky-200/60 cursor-pointer hover:bg-sky-50/50 transition-colors">

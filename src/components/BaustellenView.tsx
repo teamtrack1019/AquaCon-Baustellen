@@ -113,6 +113,8 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
         return <Waves className="w-4 h-4 text-sky-500" />;
       case 'nichtschwimmerbecken':
         return <Waves className="w-4 h-4 text-cyan-500" />;
+      case 'springerbecken':
+        return <Waves className="w-4 h-4 text-blue-600" />;
       case 'planschbecken':
         return <Waves className="w-4 h-4 text-emerald-500" />;
       case 'technikraum':
@@ -904,6 +906,7 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
                 >
                   <option value="schwimmerbecken">🏊 {t.typeSchwimmer}</option>
                   <option value="nichtschwimmerbecken">🏊‍♂️ {t.typeNichtschwimmer}</option>
+                  <option value="springerbecken">🤿 {t.typeSpringer}</option>
                   <option value="planschbecken">👶 {t.typePlansch}</option>
                   <option value="haus">🏠 {t.typeHaus}</option>
                   <option value="technikraum">⚙️ {t.typeTechnik}</option>

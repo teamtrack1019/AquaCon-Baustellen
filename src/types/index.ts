@@ -38,6 +38,7 @@ export interface CatalogItem {
 export type AreaType =
   | 'schwimmerbecken'
   | 'nichtschwimmerbecken'
+  | 'springerbecken'
   | 'planschbecken'
   | 'haus'
   | 'technikraum'
