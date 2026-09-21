@@ -500,13 +500,28 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
             {/* A-Z Catalog Quick Selection */}
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
               <div className="sm:col-span-8">
-                <input
-                  type="text"
-                  value={catalogSearch}
-                  onChange={e => setCatalogSearch(e.target.value)}
-                  placeholder="Aus A-Z Katalog suchen (z. B. PE Bogen, Vorschweißbund)..."
-                  className="w-full bg-white border border-sky-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={catalogSearch}
+                    onChange={e => setCatalogSearch(e.target.value)}
+                    placeholder="Aus A-Z Katalog suchen (z. B. PE Bogen, Vorschweißbund)..."
+                    className="w-full bg-white border border-sky-200 rounded-xl pl-3 pr-8 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                  />
+                  {catalogSearch && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCatalogSearch('');
+                        setSelectedCatalogItem(null);
+                      }}
+                      className="absolute right-2.5 top-2.5 p-0.5 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-full transition cursor-pointer"
+                      title="Suche leeren"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
 
                 {catalogSearch && !selectedCatalogItem && (
                   <div className="max-h-52 overflow-y-auto bg-white border border-sky-300 rounded-xl p-1.5 mt-1 shadow-xl z-20 divide-y divide-slate-100">

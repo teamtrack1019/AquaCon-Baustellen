@@ -18,7 +18,8 @@ import {
   Minus,
   Calculator,
   Filter,
-  Layers2
+  Layers2,
+  X
 } from 'lucide-react';
 import { AufmassSheet, AufmassItem, MaterialCategory, MaterialUnit } from '../types';
 import { generateAufmassPdf, shareAufmassPdf } from '../utils/pdfGenerator';
@@ -844,14 +845,24 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
               {/* Catalog list / Search */}
               <div className="lg:col-span-5 space-y-2">
                 <div className="relative">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
                     placeholder="Material suchen (z.B. d63, Flansch, Schelle)..."
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-9 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
                   />
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchTerm('')}
+                      className="absolute right-2.5 top-2.5 p-0.5 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-full transition cursor-pointer"
+                      title="Suche leeren"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
 
                 <div className="max-h-60 overflow-y-auto space-y-1 bg-slate-900/90 border border-slate-700/60 rounded-xl p-1.5 scrollbar-thin">

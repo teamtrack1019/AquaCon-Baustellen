@@ -579,14 +579,24 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
                 {/* Filter and Search Toolbar */}
                 <div className="p-3 bg-slate-50/70 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                   <div className="relative flex-1 max-w-sm">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
                     <input
                       type="text"
                       value={searchTerm}
                       onChange={e => setSearchTerm(e.target.value)}
                       placeholder="Material in diesem Becken suchen..."
-                      className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                      className="w-full pl-9 pr-8 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500"
                     />
+                    {searchTerm && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchTerm('')}
+                        className="absolute right-2 top-2 p-0.5 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-full transition cursor-pointer"
+                        title="Suche leeren"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
 
                   <div className="flex items-center space-x-2">
@@ -1057,14 +1067,24 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
                 )}
 
                 <div className="relative">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
                   <input
                     type="text"
                     value={catalogSearch}
                     onChange={e => setCatalogSearch(e.target.value)}
                     placeholder={`In "${matCategory}" suchen (z. B. Bogen, DA, Skimmer)...`}
-                    className="w-full bg-white border border-sky-200 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                    className="w-full bg-white border border-sky-200 rounded-lg pl-8 pr-8 py-1.5 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none"
                   />
+                  {catalogSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setCatalogSearch('')}
+                      className="absolute right-2 top-1.5 p-0.5 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-full transition cursor-pointer"
+                      title="Suche leeren"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
                 </div>
 
                 <div className="max-h-40 overflow-y-auto space-y-1 border border-sky-200/60 rounded-xl bg-white p-1.5">
