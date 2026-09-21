@@ -663,8 +663,8 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
               Aufmaßblatt Stammdaten
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4">
-              <div className="w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+              <div className="bg-slate-900/60 p-3 sm:p-3.5 rounded-xl border border-slate-700/60 flex flex-col justify-between">
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-teal-400" />
                   Aufmaß Bezeichnung / Titel *
@@ -674,11 +674,11 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
                   value={sheetTitle}
                   onChange={e => setSheetTitle(e.target.value)}
                   placeholder="z. B. Beckenumgang Verrohrung"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
                 />
               </div>
 
-              <div className="w-full">
+              <div className="bg-slate-900/60 p-3 sm:p-3.5 rounded-xl border border-slate-700/60 flex flex-col justify-between">
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-teal-400" />
                   Datum
@@ -687,11 +687,11 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
                   type="date"
                   value={sheetDate}
                   onChange={e => setSheetDate(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none block"
                 />
               </div>
 
-              <div className="w-full">
+              <div className="bg-slate-900/60 p-3 sm:p-3.5 rounded-xl border border-slate-700/60 flex flex-col justify-between">
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-amber-400" />
                   Erfasser / Monteur
@@ -713,7 +713,7 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
                         setInspectorName('');
                       }
                     }}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none font-medium"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none font-medium"
                   >
                     <option value="Admin (Zentrale)">🛡️ Admin (Zentrale)</option>
                     {currentBaustelle?.manager && (
@@ -736,7 +736,7 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
                         value={inspectorName}
                         onChange={e => setInspectorName(e.target.value)}
                         placeholder="Monteur / Erfasser Name..."
-                        className="w-full bg-slate-900 border border-teal-500/50 rounded-xl px-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                        className="w-full bg-slate-950 border border-teal-500/50 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
                       />
                     )}
                 </div>

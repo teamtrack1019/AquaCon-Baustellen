@@ -34,18 +34,13 @@
   padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.35rem);
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* iOS Date and input normalization */
+input[type="date"] {
+  min-height: 42px;
+  -webkit-appearance: none;
+  appearance: none;
 }
-::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
 }
-::-webkit-scrollbar-thumb {
-  background: rgba(56, 189, 248, 0.4);
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 189, 248, 0.7);
-}
+
