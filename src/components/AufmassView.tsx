@@ -22,7 +22,13 @@ import {
 } from 'lucide-react';
 import { AufmassSheet, AufmassItem, MaterialCategory, MaterialUnit } from '../types';
 import { generateAufmassPdf, shareAufmassPdf } from '../utils/pdfGenerator';
-import { findMatchingFlange, getMatchingScrewsForFlange } from '../utils/flangeHelper';
+import {
+  findMatchingFlange,
+  getMatchingScrewsForFlange,
+  parseScrewInfo,
+  SCREW_LENGTHS_MAP,
+  buildScrewName
+} from '../utils/flangeHelper';
 
 interface AufmassViewProps {
   initialBaustelleId?: string | null;
@@ -354,6 +360,21 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
             ...item,
             quantity: newQty,
             total: newQty
+          };
+        }
+        return item;
+      })
+    );
+  };
+
+  const handleUpdateItemScrew = (itemId: string, newName: string, newCategory: MaterialCategory) => {
+    setSheetItems(prev =>
+      prev.map(item => {
+        if (item.id === itemId) {
+          return {
+            ...item,
+            name: newName,
+            category: newCategory
           };
         }
         return item;
@@ -1067,7 +1088,68 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
                         <tr key={item.id} className="hover:bg-slate-800/50 transition">
                           <td className="py-3 px-3 font-mono text-teal-400 text-xs font-bold whitespace-nowrap">{oz}</td>
                           <td className="py-3 px-3 font-semibold text-white">
-                            {item.name}
+                            <div>{item.name}</div>
+                            {(() => {
+                              const screwInfo = parseScrewInfo(item.name);
+                              if (!screwInfo.isScrew) return null;
+                              const availableLengths = SCREW_LENGTHS_MAP[screwInfo.metric] || [50, 60, 70, 80, 90, 100, 120, 140];
+                              return (
+                                <div className="flex flex-wrap items-center gap-1.5 mt-1.5 font-normal">
+                                  <span className="text-[10px] text-teal-400 font-bold flex items-center gap-1">
+                                    <span>🔩 Länge:</span>
+                                  </span>
+                                  <select
+                                    value={screwInfo.length}
+                                    onChange={(e) => {
+                                      const newLen = parseInt(e.target.value, 10);
+                                      const built = buildScrewName(screwInfo.materialType, screwInfo.metric, newLen);
+                                      handleUpdateItemScrew(item.id, built.name, built.category);
+                                    }}
+                                    className="bg-slate-900 border border-teal-500/50 text-teal-300 text-[11px] font-bold rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-teal-400 cursor-pointer"
+                                  >
+                                    {availableLengths.map(l => (
+                                      <option key={l} value={l}>{l} mm ({screwInfo.metric} x {l})</option>
+                                    ))}
+                                  </select>
+
+                                  {/* Thread Metric selector */}
+                                  <select
+                                    value={screwInfo.metric}
+                                    onChange={(e) => {
+                                      const newM = e.target.value as any;
+                                      const newLengths = SCREW_LENGTHS_MAP[newM] || [80];
+                                      const newLen = newLengths.includes(screwInfo.length) ? screwInfo.length : newLengths[0];
+                                      const built = buildScrewName(screwInfo.materialType, newM, newLen);
+                                      handleUpdateItemScrew(item.id, built.name, built.category);
+                                    }}
+                                    className="bg-slate-900 border border-slate-700 text-slate-200 text-[11px] font-bold rounded-lg px-1.5 py-0.5 focus:outline-none cursor-pointer"
+                                  >
+                                    <option value="M12">M12</option>
+                                    <option value="M16">M16</option>
+                                    <option value="M20">M20</option>
+                                    <option value="M24">M24</option>
+                                  </select>
+
+                                  {/* Quick Material Switch vz / va */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const nextMat = screwInfo.materialType === 'vz' ? 'va' : 'vz';
+                                      const built = buildScrewName(nextMat, screwInfo.metric, screwInfo.length);
+                                      handleUpdateItemScrew(item.id, built.name, built.category);
+                                    }}
+                                    className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border transition cursor-pointer ${
+                                      screwInfo.materialType === 'va'
+                                        ? 'bg-teal-600/30 text-teal-300 border-teal-500/50 hover:bg-teal-600/40'
+                                        : 'bg-sky-600/30 text-sky-300 border-sky-500/50 hover:bg-sky-600/40'
+                                    }`}
+                                    title="Zwischen Verzinkt und VA Edelstahl wechseln"
+                                  >
+                                    {screwInfo.materialType === 'va' ? '✓ VA Edelstahl' : '✓ Verzinkt 8.8'} ⇄
+                                  </button>
+                                </div>
+                              );
+                            })()}
                           </td>
                         <td className="py-3 px-3">
                           {item.unit === 'meter' && item.segments && item.segments.length > 0 ? (

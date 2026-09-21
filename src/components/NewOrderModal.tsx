@@ -16,7 +16,13 @@ import {
 } from 'lucide-react';
 import { MaterialCategory, MaterialUnit, OrderItem } from '../types';
 import { generateOrderPdf } from '../utils/pdfGenerator';
-import { findMatchingFlange, getMatchingScrewsForFlange } from '../utils/flangeHelper';
+import {
+  findMatchingFlange,
+  getMatchingScrewsForFlange,
+  parseScrewInfo,
+  SCREW_LENGTHS_MAP,
+  buildScrewName
+} from '../utils/flangeHelper';
 import { ScrewConfigurator } from './ScrewConfigurator';
 
 interface NewOrderModalProps {
@@ -272,6 +278,14 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
       ...item,
       orderedQty: qty,
       flaggedMissingQty: qty
+    } : item));
+  };
+
+  const handleUpdateItemScrew = (index: number, newName: string, newCategory: MaterialCategory) => {
+    setItems(prev => prev.map((item, i) => i === index ? {
+      ...item,
+      name: newName,
+      category: newCategory
     } : item));
   };
 
@@ -697,7 +711,70 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ prefill, onClose }
                     {items.map((item, idx) => (
                       <tr key={idx} className="hover:bg-slate-50">
                         <td className="p-2.5 pl-4 font-mono font-bold text-slate-400">{idx + 1}</td>
-                        <td className="p-2.5 font-bold text-slate-900">{item.name}</td>
+                        <td className="p-2.5 font-bold text-slate-900">
+                          <div>{item.name}</div>
+                          {(() => {
+                            const screwInfo = parseScrewInfo(item.name);
+                            if (!screwInfo.isScrew) return null;
+                            const availableLengths = SCREW_LENGTHS_MAP[screwInfo.metric] || [50, 60, 70, 80, 90, 100, 120, 140];
+                            return (
+                              <div className="flex flex-wrap items-center gap-1.5 mt-1 font-normal">
+                                <span className="text-[10px] text-sky-700 font-bold flex items-center gap-1">
+                                  <span>🔩 Länge:</span>
+                                </span>
+                                <select
+                                  value={screwInfo.length}
+                                  onChange={(e) => {
+                                    const newLen = parseInt(e.target.value, 10);
+                                    const built = buildScrewName(screwInfo.materialType, screwInfo.metric, newLen);
+                                    handleUpdateItemScrew(idx, built.name, built.category);
+                                  }}
+                                  className="bg-white border border-sky-300 text-sky-950 text-[11px] font-bold rounded-lg px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-sky-400 cursor-pointer"
+                                >
+                                  {availableLengths.map(l => (
+                                    <option key={l} value={l}>{l} mm ({screwInfo.metric} x {l})</option>
+                                  ))}
+                                </select>
+
+                                {/* Thread Metric selector */}
+                                <select
+                                  value={screwInfo.metric}
+                                  onChange={(e) => {
+                                    const newM = e.target.value as any;
+                                    const newLengths = SCREW_LENGTHS_MAP[newM] || [80];
+                                    const newLen = newLengths.includes(screwInfo.length) ? screwInfo.length : newLengths[0];
+                                    const built = buildScrewName(screwInfo.materialType, newM, newLen);
+                                    handleUpdateItemScrew(idx, built.name, built.category);
+                                  }}
+                                  className="bg-white border border-slate-300 text-slate-700 text-[11px] font-bold rounded-lg px-1.5 py-0.5 focus:outline-none cursor-pointer"
+                                >
+                                  <option value="M12">M12</option>
+                                  <option value="M16">M16</option>
+                                  <option value="M20">M20</option>
+                                  <option value="M24">M24</option>
+                                </select>
+
+                                {/* Quick Material Switch vz / va */}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const nextMat = screwInfo.materialType === 'vz' ? 'va' : 'vz';
+                                    const built = buildScrewName(nextMat, screwInfo.metric, screwInfo.length);
+                                    handleUpdateItemScrew(idx, built.name, built.category);
+                                  }}
+                                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded-lg border transition cursor-pointer ${
+                                    screwInfo.materialType === 'va'
+                                      ? 'bg-teal-50 text-teal-700 border-teal-300 hover:bg-teal-100'
+                                      : 'bg-sky-50 text-sky-700 border-sky-300 hover:bg-sky-100'
+                                  }`}
+                                  title="Zwischen Verzinkt und VA Edelstahl wechseln"
+                                >
+                                  {screwInfo.materialType === 'va' ? '✓ VA Edelstahl' : '✓ Verzinkt 8.8'} ⇄
+                                </button>
+                              </div>
+                            );
+                          })()}
+                        </td>
                         <td className="p-2.5 text-center">
                           <input
                             type="number"

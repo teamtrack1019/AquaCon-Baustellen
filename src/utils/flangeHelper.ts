@@ -213,3 +213,56 @@ export const getMatchingScrewsForFlange = (
   };
 };
 
+export interface ParsedScrew {
+  isScrew: boolean;
+  materialType: 'vz' | 'va';
+  metric: 'M12' | 'M16' | 'M20' | 'M24';
+  length: number;
+}
+
+export const SCREW_LENGTHS_MAP: Record<string, number[]> = {
+  M12: [40, 50, 60, 70, 80, 90, 100, 110, 120],
+  M16: [40, 50, 55, 60, 65, 70, 75, 80, 85, 90, 100, 110, 120, 130, 140, 150, 160, 180, 200],
+  M20: [60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 180, 200, 220, 240],
+  M24: [80, 90, 100, 110, 120, 130, 140, 150, 160, 180, 200, 220, 240, 260]
+};
+
+export const parseScrewInfo = (name: string): ParsedScrew => {
+  const isScrew = /(?:schraubensatz|schraube)/i.test(name);
+  if (!isScrew) {
+    return { isScrew: false, materialType: 'vz', metric: 'M16', length: 80 };
+  }
+
+  const isVa = /\bva\b|\bedelstahl\b|\ba4\b/i.test(name);
+  let metric: 'M12' | 'M16' | 'M20' | 'M24' = 'M16';
+  const matchM = name.match(/\bM(12|16|20|24)\b/i);
+  if (matchM && matchM[1]) {
+    metric = `M${matchM[1]}` as any;
+  }
+
+  let length = 80;
+  const matchLen = name.match(/x\s*(\d{2,3})\b/i) || name.match(/\b(\d{2,3})\s*mm\b/i);
+  if (matchLen && matchLen[1]) {
+    length = parseInt(matchLen[1], 10);
+  }
+
+  return {
+    isScrew: true,
+    materialType: isVa ? 'va' : 'vz',
+    metric,
+    length
+  };
+};
+
+export const buildScrewName = (
+  materialType: 'vz' | 'va',
+  metric: 'M12' | 'M16' | 'M20' | 'M24',
+  length: number
+): { name: string; category: MaterialCategory } => {
+  const name = materialType === 'va'
+    ? `Schraubensatz VA ${metric} x ${length}`
+    : `Schraubensatz verzinkt ${metric} x ${length}`;
+  const category: MaterialCategory = materialType === 'va' ? 'VA Schrauben' : 'Verzinkte Schrauben';
+  return { name, category };
+};
+
