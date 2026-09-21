@@ -59,7 +59,10 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
     return b ? `Aufmaß ${b.name}` : '';
   });
   const [sheetDate, setSheetDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [inspectorName, setInspectorName] = useState<string>('');
+  const [inspectorName, setInspectorName] = useState<string>(() => {
+    if (role === 'admin') return 'Admin';
+    return activeWorker?.name || 'Mitarbeiter';
+  });
   const [sheetNotes, setSheetNotes] = useState<string>('');
   const [sheetItems, setSheetItems] = useState<AufmassItem[]>([]);
 
@@ -170,9 +173,7 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
     setCurrentSheetId(null);
     setSheetTitle(a ? `Aufmaß ${a.name}` : `Aufmaß ${b ? b.name : ''}`);
     setSheetDate(new Date().toISOString().split('T')[0]);
-    const defaultInspector = role === 'admin'
-      ? (b?.manager ? `${b.manager} (Bauleitung)` : 'Admin (Zentrale)')
-      : (activeWorker?.name || 'Mitarbeiter vor Ort');
+    const defaultInspector = role === 'admin' ? 'Admin' : (activeWorker?.name || 'Mitarbeiter');
     setInspectorName(defaultInspector);
     setSheetNotes('');
     setSheetItems([]);
@@ -697,48 +698,45 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
                   Erfasser / Monteur
                 </label>
                 <div className="space-y-1.5">
-                  <select
-                    value={
-                      inspectorName === 'Admin (Zentrale)' ||
-                      inspectorName === 'Bauleitung' ||
-                      (currentBaustelle?.manager && inspectorName === `${currentBaustelle.manager} (Bauleitung)`) ||
-                      workers.some(w => w.name === inspectorName)
-                        ? inspectorName
-                        : 'custom'
-                    }
-                    onChange={e => {
-                      if (e.target.value !== 'custom') {
-                        setInspectorName(e.target.value);
-                      } else {
-                        setInspectorName('');
-                      }
-                    }}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none font-medium"
-                  >
-                    <option value="Admin (Zentrale)">🛡️ Admin (Zentrale)</option>
-                    {currentBaustelle?.manager && (
-                      <option value={`${currentBaustelle.manager} (Bauleitung)`}>
-                        👤 {currentBaustelle.manager} (Bauleitung)
-                      </option>
-                    )}
-                    {workers.map(w => (
-                      <option key={w.id} value={w.name}>👷 {w.name} ({w.roleTitle || 'Monteur'})</option>
-                    ))}
-                    <option value="custom">✍️ Anderer Name (Manuell)...</option>
-                  </select>
+                  {role === 'admin' ? (
+                    <div className="flex items-center space-x-2 px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-sky-400 font-bold">
+                      <span>🛡️</span>
+                      <span>Admin</span>
+                    </div>
+                  ) : (
+                    <>
+                      <select
+                        value={
+                          workers.some(w => w.name === inspectorName)
+                            ? inspectorName
+                            : (activeWorker?.name || 'custom')
+                        }
+                        onChange={e => {
+                          if (e.target.value !== 'custom') {
+                            setInspectorName(e.target.value);
+                          } else {
+                            setInspectorName('');
+                          }
+                        }}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none font-medium"
+                      >
+                        {workers.map(w => (
+                          <option key={w.id} value={w.name}>👷 {w.name} ({w.roleTitle || 'Monteur'})</option>
+                        ))}
+                        <option value="custom">✍️ Anderer Name (Manuell)...</option>
+                      </select>
 
-                  {inspectorName !== 'Admin (Zentrale)' &&
-                    inspectorName !== 'Bauleitung' &&
-                    (!currentBaustelle?.manager || inspectorName !== `${currentBaustelle.manager} (Bauleitung)`) &&
-                    !workers.some(w => w.name === inspectorName) && (
-                      <input
-                        type="text"
-                        value={inspectorName}
-                        onChange={e => setInspectorName(e.target.value)}
-                        placeholder="Monteur / Erfasser Name..."
-                        className="w-full bg-slate-950 border border-teal-500/50 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
-                      />
-                    )}
+                      {!workers.some(w => w.name === inspectorName) && (
+                        <input
+                          type="text"
+                          value={inspectorName}
+                          onChange={e => setInspectorName(e.target.value)}
+                          placeholder="Monteur / Erfasser Name..."
+                          className="w-full bg-slate-950 border border-teal-500/50 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                        />
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </div>
