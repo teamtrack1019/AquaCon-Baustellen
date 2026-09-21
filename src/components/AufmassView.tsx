@@ -419,7 +419,7 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
       </div>
 
       {/* Baustelle & Bereich Filter Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-850 p-4 rounded-xl border border-slate-800 shadow-md">
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${mode === 'list' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3 bg-slate-850 p-4 rounded-xl border border-slate-800 shadow-md`}>
         <div>
           <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
             <Building2 className="w-3.5 h-3.5 text-sky-400" />
@@ -434,8 +434,10 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
               if (!currentSheetId) {
                 const targetB = baustellen.find(b => b.id === newBId);
                 setSheetTitle(targetB ? `Aufmaß ${targetB.name}` : '');
-                if (role === 'admin' && targetB?.manager) {
-                  setInspectorName(`${targetB.manager} (Bauleitung)`);
+                if (role === 'admin') {
+                  setInspectorName('Admin');
+                } else if (activeWorker) {
+                  setInspectorName(activeWorker.name);
                 }
               }
             }}
@@ -476,23 +478,25 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
           </select>
         </div>
 
-        <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <User className="w-3.5 h-3.5 text-amber-400" />
-            Erfasser
-          </label>
-          <select
-            value={inspectorFilter}
-            onChange={e => setInspectorFilter(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none font-medium"
-          >
-            <option value="all">Alle Erfasser</option>
-            <option value="admin">🛡️ Admin / Bauleitung</option>
-            {workers.map(w => (
-              <option key={w.id} value={w.name}>👷 {w.name}</option>
-            ))}
-          </select>
-        </div>
+        {mode === 'list' && (
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 text-amber-400" />
+              Filter nach Erfasser
+            </label>
+            <select
+              value={inspectorFilter}
+              onChange={e => setInspectorFilter(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none font-medium"
+            >
+              <option value="all">Alle Erfasser</option>
+              <option value="admin">🛡️ Admin</option>
+              {workers.map(w => (
+                <option key={w.id} value={w.name}>👷 {w.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="flex items-center justify-end gap-3 text-xs text-slate-400 border-t sm:border-t-0 sm:border-l border-slate-700/60 pt-3 sm:pt-0 sm:pl-4">
           <button
@@ -704,38 +708,17 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
                       <span>Admin</span>
                     </div>
                   ) : (
-                    <>
-                      <select
-                        value={
-                          workers.some(w => w.name === inspectorName)
-                            ? inspectorName
-                            : (activeWorker?.name || 'custom')
-                        }
-                        onChange={e => {
-                          if (e.target.value !== 'custom') {
-                            setInspectorName(e.target.value);
-                          } else {
-                            setInspectorName('');
-                          }
-                        }}
-                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none font-medium"
-                      >
-                        {workers.map(w => (
-                          <option key={w.id} value={w.name}>👷 {w.name} ({w.roleTitle || 'Monteur'})</option>
-                        ))}
-                        <option value="custom">✍️ Anderer Name (Manuell)...</option>
-                      </select>
-
-                      {!workers.some(w => w.name === inspectorName) && (
-                        <input
-                          type="text"
-                          value={inspectorName}
-                          onChange={e => setInspectorName(e.target.value)}
-                          placeholder="Monteur / Erfasser Name..."
-                          className="w-full bg-slate-950 border border-teal-500/50 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
-                        />
-                      )}
-                    </>
+                    <select
+                      value={workers.some(w => w.name === inspectorName) ? inspectorName : (activeWorker?.name || workers[0]?.name || '')}
+                      onChange={e => setInspectorName(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-teal-500 focus:outline-none font-medium"
+                    >
+                      {workers.map(w => (
+                        <option key={w.id} value={w.name}>
+                          👷 {w.name} {w.roleTitle ? `(${w.roleTitle})` : ''}
+                        </option>
+                      ))}
+                    </select>
                   )}
                 </div>
               </div>
