@@ -3,29 +3,43 @@ import autoTable from 'jspdf-autotable';
 import { Order, Baustelle, Area, AreaMaterial } from '../types';
 import { INITIAL_CATALOG } from '../data/initialCatalog';
 
-export const sharePdfDoc = async (doc: jsPDF, filename: string, title: string) => {
-  const cleanFilename = filename.endsWith('.pdf') ? filename : `${filename}.pdf`;
+export const sanitizeFilename = (name: string): string => {
+  return (name || '')
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/Ä/g, 'Ae')
+    .replace(/Ö/g, 'Oe')
+    .replace(/Ü/g, 'Ue')
+    .replace(/ß/g, 'ss')
+    .replace(/[^a-zA-Z0-9_-]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+};
+
+export const sharePdfDoc = async (doc: jsPDF, filename: string, title?: string) => {
+  const baseName = sanitizeFilename(filename.replace(/\.pdf$/i, '')) || 'AquaCon_Dokument';
+  const safeFilename = `${baseName}.pdf`;
   const pdfBlob = doc.output('blob');
 
-  // Check if Web Share API with file support is available (iOS, iPadOS, Android)
+  // Check if Web Share API with file support is available (iOS Safari, iPadOS, Android Chrome)
   if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
-    const file = new File([pdfBlob], cleanFilename, {
+    const file = new File([pdfBlob], safeFilename, {
       type: 'application/pdf',
       lastModified: Date.now()
     });
 
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
-        // IMPORTANT: Do NOT pass `text` or `url` when sharing files!
-        // When `text` is passed, WhatsApp for iOS/Android prioritizes the text and sends a text message instead of attaching the actual PDF document.
+        // IMPORTANT: Pass ONLY `files: [file]`.
+        // Do NOT pass `text`, `title`, or `url`. When `title`/`text` are passed, WhatsApp iOS treats it as text and fails to send the file.
         await navigator.share({
-          files: [file],
-          title: cleanFilename
+          files: [file]
         });
         return;
       } catch (err: any) {
         if (err?.name === 'AbortError') {
-          // User cancelled the share dialog
+          // User intentionally closed/canceled the share sheet
           return;
         }
         console.warn('Native file share failed, falling back:', err);
@@ -35,16 +49,15 @@ export const sharePdfDoc = async (doc: jsPDF, filename: string, title: string) =
 
   // Fallback for Desktop browsers or environments without Web Share Level 2:
   // 1. Download the PDF directly so the user has the actual file
-  doc.save(cleanFilename);
+  doc.save(safeFilename);
 
   const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || '');
   if (isMobile) {
-    // Open the PDF in a new tab on mobile so the user can use the browser's native share button to send to WhatsApp
-    const blobUrl = URL.createObjectURL(pdfBlob);
-    window.open(blobUrl, '_blank');
+    // If native share is not supported on mobile, prompt download
+    alert(`📄 Die PDF "${safeFilename}" wurde heruntergeladen.`);
   } else {
     // Desktop: Inform the user and open WhatsApp Web
-    alert(`📄 Die PDF "${cleanFilename}" wurde erfolgreich heruntergeladen!\n\nSie können die Datei jetzt in WhatsApp einfach per Drag & Drop oder über das Büroklammer-Symbol 📎 als Dokument einfügen.`);
+    alert(`📄 Die PDF "${safeFilename}" wurde heruntergeladen!\n\nSie können die Datei jetzt in WhatsApp einfach per Drag & Drop oder über die Büroklammer 📎 als Dokument einfügen.`);
     window.open('https://web.whatsapp.com', '_blank');
   }
 };
@@ -147,8 +160,9 @@ export const createOrderPdfDoc = (order: Order) => {
     doc.text(`AquaCon Baustellen & Materialführung • Seite ${i} von ${pageCount}`, 14, 290);
   }
 
-  const cleanTitle = (order.orderNumber || 'Bestellung').replace(/[^a-zA-Z0-9-_]/g, '_');
-  const filename = `AquaCon_${cleanTitle}_${order.baustelleName.slice(0, 15)}.pdf`;
+  const cleanTitle = sanitizeFilename(order.orderNumber || 'Bestellung');
+  const cleanBName = sanitizeFilename(order.baustelleName || 'Baustelle');
+  const filename = `AquaCon_${cleanTitle}_${cleanBName.slice(0, 15)}.pdf`;
 
   return { doc, filename };
 };
@@ -230,8 +244,9 @@ export const createAreaMaterialPdfDoc = (baustelle: Baustelle, area: Area) => {
     }
   });
 
-  const cleanName = `${baustelle.name}_${area.name}`.replace(/[^a-zA-Z0-9-_]/g, '_');
-  const filename = `Materialliste_${cleanName}.pdf`;
+  const cleanBName = sanitizeFilename(baustelle.name || 'Baustelle');
+  const cleanAName = sanitizeFilename(area.name || 'Bereich');
+  const filename = `Materialliste_${cleanBName}_${cleanAName}.pdf`;
 
   return { doc, filename };
 };
@@ -350,8 +365,9 @@ export const createAufmassPdfDoc = (sheet: import('../types').AufmassSheet) => {
     doc.text(`AquaCon Aufmaßblatt • Seite ${i} von ${pageCount}`, 14, 290);
   }
 
-  const cleanTitle = (sheet.title || 'Aufmass').replace(/[^a-zA-Z0-9-_]/g, '_');
-  const filename = `AquaCon_Aufmass_${cleanTitle}_${sheet.baustelleName.slice(0, 15)}.pdf`;
+  const cleanTitle = sanitizeFilename(sheet.title || 'Aufmass');
+  const cleanBName = sanitizeFilename(sheet.baustelleName || 'Baustelle');
+  const filename = `AquaCon_Aufmass_${cleanTitle}_${cleanBName.slice(0, 15)}.pdf`;
 
   return { doc, filename };
 };
@@ -559,8 +575,8 @@ export const createCombinedAufmassPdfDoc = (sheets: import('../types').AufmassSh
     doc.text(`AquaCon Gesamtaufmaß • ${baustelleName} • Seite ${i} von ${pageCount}`, 14, 290);
   }
 
-  const cleanBName = (baustelleName || 'Baustelle').replace(/[^a-zA-Z0-9-_]/g, '_');
-  const filename = `AquaCon_GESAMTAUFMAß_${cleanBName}_${new Date().toISOString().split('T')[0]}.pdf`;
+  const cleanBName = sanitizeFilename(baustelleName || 'Baustelle');
+  const filename = `AquaCon_GESAMTAUFMASS_${cleanBName}_${new Date().toISOString().split('T')[0]}.pdf`;
 
   return { doc, filename };
 };
