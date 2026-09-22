@@ -7,29 +7,46 @@ export const sharePdfDoc = async (doc: jsPDF, filename: string, title: string) =
   const cleanFilename = filename.endsWith('.pdf') ? filename : `${filename}.pdf`;
   const pdfBlob = doc.output('blob');
 
-  if (typeof navigator !== 'undefined' && navigator.share) {
-    const file = new File([pdfBlob], cleanFilename, { type: 'application/pdf' });
+  // Check if Web Share API with file support is available (iOS, iPadOS, Android)
+  if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+    const file = new File([pdfBlob], cleanFilename, {
+      type: 'application/pdf',
+      lastModified: Date.now()
+    });
+
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
+        // IMPORTANT: Do NOT pass `text` or `url` when sharing files!
+        // When `text` is passed, WhatsApp for iOS/Android prioritizes the text and sends a text message instead of attaching the actual PDF document.
         await navigator.share({
           files: [file],
-          title: title,
-          text: title
+          title: cleanFilename
         });
         return;
       } catch (err: any) {
         if (err?.name === 'AbortError') {
+          // User cancelled the share dialog
           return;
         }
-        console.warn('Native share failed, fallback to download:', err);
+        console.warn('Native file share failed, falling back:', err);
       }
     }
   }
 
-  // Fallback for browsers without Web Share Level 2 file sharing support
+  // Fallback for Desktop browsers or environments without Web Share Level 2:
+  // 1. Download the PDF directly so the user has the actual file
   doc.save(cleanFilename);
-  const textMsg = encodeURIComponent(`${title} PDF wurde heruntergeladen. Sie können die Datei per WhatsApp teilen.`);
-  window.open(`https://wa.me/?text=${textMsg}`, '_blank');
+
+  const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || '');
+  if (isMobile) {
+    // Open the PDF in a new tab on mobile so the user can use the browser's native share button to send to WhatsApp
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    window.open(blobUrl, '_blank');
+  } else {
+    // Desktop: Inform the user and open WhatsApp Web
+    alert(`📄 Die PDF "${cleanFilename}" wurde erfolgreich heruntergeladen!\n\nSie können die Datei jetzt in WhatsApp einfach per Drag & Drop oder über das Büroklammer-Symbol 📎 als Dokument einfügen.`);
+    window.open('https://web.whatsapp.com', '_blank');
+  }
 };
 
 export const createOrderPdfDoc = (order: Order) => {
