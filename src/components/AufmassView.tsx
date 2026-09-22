@@ -22,7 +22,12 @@ import {
   X
 } from 'lucide-react';
 import { AufmassSheet, AufmassItem, MaterialCategory, MaterialUnit, PipeSystemType } from '../types';
-import { generateAufmassPdf, shareAufmassPdf } from '../utils/pdfGenerator';
+import {
+  generateAufmassPdf,
+  shareAufmassPdf,
+  generateCombinedAufmassPdf,
+  shareCombinedAufmassPdf
+} from '../utils/pdfGenerator';
 import {
   findMatchingFlange,
   getMatchingScrewsForFlange,
@@ -497,6 +502,20 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
     await shareAufmassPdf(sheet);
   };
 
+  // Export Combined Baustelle PDF (all sheets in one PDF)
+  const handleExportCombinedPdf = () => {
+    if (relevantSheets.length === 0) return;
+    const bName = currentBaustelle ? currentBaustelle.name : 'Baustelle';
+    generateCombinedAufmassPdf(relevantSheets, bName);
+  };
+
+  // Share Combined Baustelle PDF
+  const handleShareCombinedPdf = async () => {
+    if (relevantSheets.length === 0) return;
+    const bName = currentBaustelle ? currentBaustelle.name : 'Baustelle';
+    await shareCombinedAufmassPdf(relevantSheets, bName);
+  };
+
   // Quick total calculations for sheet
   const totalMeters = useMemo(() => {
     return sheetItems
@@ -509,6 +528,21 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
       .filter(i => i.unit !== 'meter')
       .reduce((sum, i) => sum + (i.total || 0), 0);
   }, [sheetItems]);
+
+  // Project wide totals for relevantSheets
+  const projectTotalMeters = useMemo(() => {
+    return relevantSheets.reduce((sum, sheet) => {
+      const pipeItems = sheet.items.filter(i => i.unit === 'meter');
+      return sum + pipeItems.reduce((s, i) => s + (i.total || 0), 0);
+    }, 0);
+  }, [relevantSheets]);
+
+  const projectTotalPieces = useMemo(() => {
+    return relevantSheets.reduce((sum, sheet) => {
+      const pieceItems = sheet.items.filter(i => i.unit !== 'meter');
+      return sum + pieceItems.reduce((s, i) => s + (i.total || 0), 0);
+    }, 0);
+  }, [relevantSheets]);
 
   return (
     <div className="space-y-6">
@@ -531,15 +565,38 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
           {mode === 'list' ? (
-            <button
-              onClick={handleStartNewSheet}
-              className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-slate-950 font-bold rounded-xl shadow-lg shadow-teal-500/20 transition-all cursor-pointer"
-            >
-              <PlusCircle className="w-5 h-5" />
-              <span>Neues Aufmaß erstellen</span>
-            </button>
+            <>
+              {relevantSheets.length > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={handleExportCombinedPdf}
+                    className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-slate-700 hover:bg-slate-600 text-teal-300 font-bold text-xs sm:text-sm rounded-xl border border-slate-600 transition shadow-sm cursor-pointer"
+                    title="Alle Aufmaße dieser Baustelle in einer einzigen Gesamt-PDF herunterladen"
+                  >
+                    <Download className="w-4 h-4 text-teal-400" />
+                    <span>Gesamt-PDF ({relevantSheets.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleShareCombinedPdf}
+                    className="p-2.5 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 rounded-xl border border-teal-500/30 text-sm font-semibold transition shadow-sm cursor-pointer"
+                    title="Gesamt-PDF aller Aufmaße teilen / WhatsApp"
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+              <button
+                onClick={handleStartNewSheet}
+                className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-slate-950 font-bold rounded-xl shadow-lg shadow-teal-500/20 transition-all cursor-pointer"
+              >
+                <PlusCircle className="w-5 h-5" />
+                <span>Neues Aufmaß erstellen</span>
+              </button>
+            </>
           ) : (
             <div className="flex items-center gap-2">
               <button
@@ -703,8 +760,47 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {relevantSheets.map(sheet => {
+            <>
+              {/* Summary & Combined PDF bar */}
+              <div className="bg-slate-850 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 rounded-xl border border-slate-700/60 text-xs">
+                    <span className="text-slate-400">Gespeicherte Blätter:</span>
+                    <span className="font-bold text-teal-300">{relevantSheets.length} Aufmaße</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 rounded-xl border border-slate-700/60 text-xs">
+                    <span className="text-slate-400">Gesamtrohrlänge:</span>
+                    <span className="font-bold text-teal-300">{projectTotalMeters.toFixed(2)} m</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 rounded-xl border border-slate-700/60 text-xs">
+                    <span className="text-slate-400">Formteile / Stk.:</span>
+                    <span className="font-bold text-sky-400">{projectTotalPieces} Stk.</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleExportCombinedPdf}
+                    className="flex items-center space-x-1.5 px-3.5 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
+                    title="Alle Aufmaße dieser Baustelle als ein zusammenhängendes PDF-Dokument herunterladen"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Gesamt-PDF herunterladen</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleShareCombinedPdf}
+                    className="p-2 bg-slate-800 hover:bg-slate-700 text-teal-300 rounded-xl border border-slate-700 transition cursor-pointer"
+                    title="Gesamt-PDF aller Aufmaße teilen / WhatsApp"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {relevantSheets.map(sheet => {
                 const pipeItems = sheet.items.filter(i => i.unit === 'meter');
                 const pieceItems = sheet.items.filter(i => i.unit !== 'meter');
                 const totalM = pipeItems.reduce((acc, i) => acc + (i.total || 0), 0);
@@ -824,6 +920,7 @@ export const AufmassView: React.FC<AufmassViewProps> = ({ initialBaustelleId }) 
                 );
               })}
             </div>
+            </>
           )}
         </div>
       )}
