@@ -1,11 +1,37 @@
 <svg viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="aquaconGreenGrad" x1="10%" y1="10%" x2="90%" y2="90%">
-      <stop offset="0%" stop-color="#10B981" />
-      <stop offset="100%" stop-color="#059669" />
+    <!-- Rich emerald-green gradient matching AquaCon theme -->
+    <linearGradient id="aquaconGreenBg" x1="15%" y1="10%" x2="85%" y2="90%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="60%" stop-color="#047857" />
+      <stop offset="100%" stop-color="#065f46" />
     </linearGradient>
   </defs>
-  <circle cx="250" cy="250" r="235" fill="url(#aquaconGreenGrad)" />
-  <text x="250" y="215" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-size="118" letter-spacing="-1">Aqua</text>
-  <text x="250" y="348" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-size="118" letter-spacing="-1">Con</text>
+
+  <!-- Background Circle -->
+  <circle cx="250" cy="250" r="235" fill="url(#aquaconGreenBg)" />
+
+  <!-- Wave Swooshes above 'Con' -->
+  <!-- Top wave with elegant upturn -->
+  <path
+    d="M 248 206 C 275 190, 305 194, 328 208 C 344 218, 356 215, 368 188"
+    stroke="#7DD3FC"
+    stroke-width="7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <!-- Bottom wave parallel -->
+  <path
+    d="M 258 220 C 280 207, 305 209, 325 221 C 337 228, 347 226, 356 206"
+    stroke="#7DD3FC"
+    stroke-width="6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- AquaCon Brand Text -->
+  <g font-family="'Montserrat', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="700" font-size="78" letter-spacing="-0.5">
+    <text x="246" y="286" text-anchor="end" fill="#FFFFFF">Aqua</text>
+    <text x="246" y="286" text-anchor="start" fill="#7DD3FC">Con</text>
+  </g>
 </svg>
