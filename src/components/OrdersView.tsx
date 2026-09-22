@@ -365,8 +365,8 @@ export const OrdersView: React.FC<OrdersViewProps> = ({ onOpenNewOrder }) => {
                     )
                   )}
 
-                  {/* Wareneingang / Lieferschein Button ONLY for Worker */}
-                  {role === 'worker' && (
+                  {/* Wareneingang / Lieferschein Button ONLY for Worker if order has been processed by Admin (not pure pending) */}
+                  {role === 'worker' && order.status !== 'delivered' && order.items.some(i => i.status !== 'pending' && i.status !== 'delivered') && (
                     <button
                       onClick={() => setSelectedOrderForDeliveryCheck(order)}
                       className="px-3.5 py-2 font-black rounded-xl text-xs shadow-md transition-all flex items-center space-x-1.5 active:scale-95 bg-emerald-600 hover:bg-emerald-500 text-white animate-pulse hover:animate-none ring-2 ring-emerald-400/40"
@@ -540,24 +540,29 @@ export const OrdersView: React.FC<OrdersViewProps> = ({ onOpenNewOrder }) => {
                                   </div>
                                 )
                               ) : (
-                                /* Worker Action: Confirm Receipt / Check Delivery when arrived */
-                                <div>
-                                  {item.status !== 'delivered' ? (
-                                    <button
-                                      onClick={() => setSelectedOrderForDeliveryCheck(order)}
-                                      className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg shadow-sm transition-all flex items-center space-x-1.5 ml-auto active:scale-95"
-                                      title="Lieferschein / Stückzahl prüfen und Wareneingang erfassen"
-                                    >
-                                      <Truck className="w-4 h-4" />
-                                      <span>📦 Ware prüfen</span>
-                                    </button>
-                                  ) : (
-                                    <span className="text-emerald-700 text-xs font-bold flex items-center justify-end space-x-1">
-                                      <CheckCircle2 className="w-3.5 h-3.5" />
-                                      <span>✓ Erhalten & gebucht</span>
-                                    </span>
-                                  )}
-                                </div>
+                                  /* Worker Action: Confirm Receipt / Check Delivery when arrived */
+                                  <div>
+                                    {item.status === 'delivered' ? (
+                                      <span className="text-emerald-700 text-xs font-bold flex items-center justify-end space-x-1">
+                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                        <span>✓ Erhalten & gebucht</span>
+                                      </span>
+                                    ) : item.status === 'pending' ? (
+                                      <span className="text-amber-700 text-xs font-semibold flex items-center justify-end space-x-1 bg-amber-50/80 border border-amber-200 px-2.5 py-1 rounded-lg">
+                                        <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                        <span>⏳ Wartet auf Admin</span>
+                                      </span>
+                                    ) : (
+                                      <button
+                                        onClick={() => setSelectedOrderForDeliveryCheck(order)}
+                                        className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg shadow-sm transition-all flex items-center space-x-1.5 ml-auto active:scale-95"
+                                        title="Lieferschein / Stückzahl prüfen und Wareneingang erfassen"
+                                      >
+                                        <Truck className="w-4 h-4" />
+                                        <span>📦 Ware prüfen</span>
+                                      </button>
+                                    )}
+                                  </div>
                               )}
                             </td>
                           </tr>

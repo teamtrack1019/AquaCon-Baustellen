@@ -841,7 +841,7 @@ export const BaustellenView: React.FC<BaustellenViewProps> = ({
                                       </span>
                                     )}
 
-                                    {item.status !== 'delivered' && (
+                                    {item.status !== 'pending' && item.status !== 'delivered' && (
                                       <button
                                         onClick={() => setSelectedOrderForDeliveryCheck(order)}
                                         className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm active:scale-95"
